@@ -1,4 +1,4 @@
 package org.example.model;
 
-public class Order {
+public class Tilaus {
 }
