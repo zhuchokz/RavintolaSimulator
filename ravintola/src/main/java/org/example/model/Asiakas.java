@@ -3,52 +3,33 @@ package org.example.model;
 import org.example.framework.Kello;
 import org.example.framework.Trace;
 
-// TODO:
-// Asiakas koodataan simulointimallin edellyttämällä tavalla (data!)
 public class Asiakas {
 	private double saapumisaika;
 	private double poistumisaika;
 	private int id;
+	private Tilaus tilaus;
+
 	private static int i = 1;
 	private static long sum = 0;
-	
-	public Asiakas(){
-	    id = i++;
-	    
+
+	public Asiakas() {
+		id = i++;
 		saapumisaika = Kello.getInstance().getAika();
-		Trace.out(Trace.Level.INFO, "Uusi asiakas nro " + id + " saapui klo "+saapumisaika);
+		Trace.out(Trace.Level.INFO, "Uusi asiakas nro " + id + " saapui ravintolaan klo " + saapumisaika);
 	}
 
-	public double getPoistumisaika() {
-		return poistumisaika;
-	}
+	public Tilaus getTilaus() { return tilaus; }
+	public void setTilaus(Tilaus tilaus) { this.tilaus = tilaus; }
+	public double getPoistumisaika() { return poistumisaika; }
+	public void setPoistumisaika(double poistumisaika) { this.poistumisaika = poistumisaika; }
+	public double getSaapumisaika() { return saapumisaika; }
+	public int getId() { return id; }
 
-	public void setPoistumisaika(double poistumisaika) {
-		this.poistumisaika = poistumisaika;
+	public void raportti() {
+		Trace.out(Trace.Level.INFO, "\n>> Asiakas " + id + " sai pizzansa ja poistui!");
+		Trace.out(Trace.Level.INFO, ">> Viipymäaika ravintolassa: " + (poistumisaika - saapumisaika));
+		sum += (poistumisaika - saapumisaika);
+		double keskiarvo = (double) sum / id;
+		System.out.println(">> Asiakkaiden läpimenon keskiarvo tähän asti: " + keskiarvo);
 	}
-
-	public double getSaapumisaika() {
-		return saapumisaika;
-	}
-
-	public void setSaapumisaika(double saapumisaika) {
-		this.saapumisaika = saapumisaika;
-	}
-	
-
-
-	public int getId() {
-		return id;
-	}
-	
-	public void raportti(){
-		Trace.out(Trace.Level.INFO, "\nAsiakas "+id+ " valmis! ");
-		Trace.out(Trace.Level.INFO, "Asiakas "+id+ " saapui: " +saapumisaika);
-		Trace.out(Trace.Level.INFO,"Asiakas "+id+ " poistui: " +poistumisaika);
-		Trace.out(Trace.Level.INFO,"Asiakas "+id+ " viipyi: " +(poistumisaika-saapumisaika));
-		sum += (poistumisaika-saapumisaika);
-		double keskiarvo = sum/id;
-		System.out.println("Asiakkaiden läpimenoaikojen keskiarvo tähän asti "+ keskiarvo);
-	}
-
 }

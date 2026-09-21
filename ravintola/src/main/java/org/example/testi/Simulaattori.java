@@ -5,14 +5,12 @@ import org.example.framework.Trace;
 import org.example.framework.Trace.Level;
 import org.example.model.OmaMoottori;
 
-public class Simulaattori { //Tekstipohjainen
-
+public class Simulaattori {
 	public static void main(String[] args) {
-		
 		Trace.setTraceLevel(Level.INFO);
 		Moottori m = new OmaMoottori();
-		m.setSimulointiaika(10);
+
+		m.setSimulointiaika(50);
 		m.aja();
-		///
 	}
 }
