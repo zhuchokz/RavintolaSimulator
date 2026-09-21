@@ -1,4 +1,4 @@
-package objects;
+package org.example.model;
 
 public class Customer {
 }
