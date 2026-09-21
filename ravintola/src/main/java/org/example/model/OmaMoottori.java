@@ -30,44 +30,47 @@ public class OmaMoottori extends Moottori {
 	}
 
 	@Override
-	protected void suoritaTapahtuma(Tapahtuma t) {
+	protected void suoritaTapahtuma(Tapahtuma t) {  // B-vaiheen tapahtumat
 		Asiakas a;
-
 		switch ((TapahtumanTyyppi) t.getTyyppi()) {
+
 			case ARR1:
-				// asiakas saapuu ja menee kassajonoon (palvelupiste 0)
-				a = new Asiakas();
-				palvelupisteet[0].lisaaJonoon(a);
+				// asiakas saapuu ravintolaan
+				palvelupisteet[0].lisaaJonoon(new Asiakas());
 				saapumisprosessi.generoiSeuraava();
 				break;
 
 			case DEP1:
-				// asiakkaalle luodaan Pizza ja Tilaus
+				// tilaus ja maksu suoritettu
 				a = (Asiakas) palvelupisteet[0].otaJonosta();
-				System.out.println("-> Asiakas " + a.getId() + " teki tilauksen Kassalla. Siirtyy keittiöjonoon.");
 
-				// tässä hyödynnetään olemassa olevia luokkianne:
-				Pizza uusiPizza = new Pizza("Pepperoni");
-				Tilaus tilaus = new Tilaus(a, uusiPizza);
-				a.setTilaus(tilaus); // tallennetaan tilaus asiakkaalle
+				Pizza pz = new Pizza("Pepperoni");
+				Tilaus tilaus = new Tilaus(a, pz); //tilausnmr
+				a.setTilaus(tilaus);
 
-				palvelupisteet[1].lisaaJonoon(a); // siirretään keittiöjonoon
+				System.out.println("-> Asiakas " + a.getId() + " maksoi tilauksen nro " + tilaus.getId() + ". Siirtyy odottamaan (Uuni).");
+
+				// siirretään uuniin (palvelupiste 1)
+				palvelupisteet[1].lisaaJonoon(a);
 				break;
 
 			case DEP2:
-				// pizza on paistettu
+				// odotus ja valmistus päättyi
 				a = (Asiakas) palvelupisteet[1].otaJonosta();
-				if (a.getTilaus() != null && a.getTilaus().getPizza() != null) {
-					a.getTilaus().getPizza().setValmis(true); // merkataan pizza valmiiksi
-				}
-				System.out.println("-> Kokki sai valmiiksi asiakkaan " + a.getId() + " pizzan. Siirtyy luovutukseen.");
-				palvelupisteet[2].lisaaJonoon(a); // siirretään luovutusjonoon
+				a.getTilaus().getPizza().setValmis(true);
+
+				System.out.println("-> Pizza tilaukseen nro " + a.getTilaus().getId() + " on valmis uunista! Siirtyy vastaanottoon.");
+
+				// siirretään luovutustiskille / vastaanottoon (palvelupiste 2)
+				palvelupisteet[2].lisaaJonoon(a);
 				break;
 
 			case DEP3:
-				// asiakas saa pizzan ja poistuu järjestelmästä
+				// vastaanotto valmis -> asiakas ulos
 				a = (Asiakas) palvelupisteet[2].otaJonosta();
 				a.setPoistumisaika(Kello.getInstance().getAika());
+
+				System.out.println("-> Asiakas " + a.getId() + " otti tilauksen nro " + a.getTilaus().getId() + " vastaan ja käveli ulos ravintolasta.");
 				a.raportti();
 				break;
 		}
