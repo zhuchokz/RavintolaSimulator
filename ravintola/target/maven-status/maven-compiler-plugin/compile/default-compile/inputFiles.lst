@@ -1,3 +1,6 @@
+C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\controller\IKontrolleriForM.java
+C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\controller\IKontrolleriForV.java
+C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\controller\Kontrolleri.java
 C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\eduni\distributions\Bernoulli.java
 C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\eduni\distributions\Beta.java
 C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\eduni\distributions\BetaPrime.java
@@ -28,6 +31,7 @@ C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\eduni\d
 C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\eduni\distributions\Tstudent.java
 C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\eduni\distributions\Uniform.java
 C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\eduni\distributions\Weibull.java
+C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\framework\IMoottori.java
 C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\framework\ITapahtumanTyyppi.java
 C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\framework\Kello.java
 C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\framework\Moottori.java
@@ -41,4 +45,10 @@ C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\model\P
 C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\model\Pizza.java
 C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\model\TapahtumanTyyppi.java
 C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\model\Tilaus.java
-C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\testi\Simulaattori.java
+C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\view\App.java
+C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\view\ISimulaattorinUI.java
+C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\view\IVisualisointi.java
+C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\view\Main.java
+C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\view\SimulaattorinGUI.java
+C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\view\Visualisointi.java
+C:\koulu-tehtavat\RavintolaSimulator\ravintola\src\main\java\org\example\view\Visualisointi2.java
