@@ -1,9 +1,8 @@
 package org.example.model;
 
-import org.example.framework.Kello;
-import org.example.framework.Moottori;
-import org.example.framework.Saapumisprosessi;
-import org.example.framework.Tapahtuma;
+import org.example.controller.IKontrolleriForM;
+import org.example.framework.*;
+
 import org.example.eduni.distributions.Negexp;
 import org.example.eduni.distributions.Normal;
 
@@ -12,7 +11,9 @@ public class OmaMoottori extends Moottori {
 	private Saapumisprosessi saapumisprosessi;
 	private Palvelupiste[] palvelupisteet;
 
-	public OmaMoottori() {
+	public OmaMoottori(IKontrolleriForM kontrolleri){
+
+		super(kontrolleri);
 		palvelupisteet = new Palvelupiste[3];
 
 		// 3 palvelupistettä: Kassa, Keittiö ja Luovutustiski
@@ -90,5 +91,7 @@ public class OmaMoottori extends Moottori {
 		System.out.println("\n--- SIMULOINTI PÄÄTTYI ---");
 		System.out.println("Kello on nyt: " + Kello.getInstance().getAika());
 		System.out.println("Kiitos pizzansyönnistä!");
+		kontrolleri.visualisoiAsiakas(); // UUSI
+
 	}
 }
