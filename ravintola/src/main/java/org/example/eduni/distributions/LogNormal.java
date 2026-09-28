@@ -1,5 +1,7 @@
 package org.example.eduni.distributions;
 
+import org.example.eduni.distributions.Normal;
+
 /**
  * A random number generator based on the lognormal distribution.
  * @version     1.0, 2 October 2002

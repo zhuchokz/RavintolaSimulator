@@ -1,5 +1,9 @@
 package org.example.eduni.distributions;
 
+import org.example.eduni.distributions.ContinuousGenerator;
+import org.example.eduni.distributions.Generator;
+import org.example.eduni.distributions.ParameterException;
+
 /**
  * A random number generator based on the F-distribution.
  * @version     1.0, 2 October 2002

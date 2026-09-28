@@ -1,5 +1,8 @@
 package org.example.eduni.distributions;
 
+import org.example.eduni.distributions.ContinuousGenerator;
+import org.example.eduni.distributions.RandomGenerator;
+
 /**
  * offers several discrete and continuous distributions all seeded by a common
  * well-spaced pseudo random number generator (PRNG).

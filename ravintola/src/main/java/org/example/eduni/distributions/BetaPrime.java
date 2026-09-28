@@ -1,5 +1,7 @@
 package org.example.eduni.distributions;
 
+import org.example.eduni.distributions.Beta;
+
 /**
  * A random number generator based on the beta prime distribution.
  * @version     1.0, 2 October 2002
