@@ -12,7 +12,7 @@ public class MyEngine extends Engine {
 	private ArrivalProcess arrivalProcess;
 
 	public MyEngine(IControllerMtoV controller){ // NEW
-		super(controller); // NEW
+		super(controller);
 
 		servicePoints = new ServicePoint[3];
 
@@ -31,7 +31,7 @@ public class MyEngine extends Engine {
 
 	@Override
 	protected void runEvent(Event t) {  // B phase events
-		Customer customer; // Заменено 'a' на 'customer'
+		Customer customer;
 
 		switch ((EventType)t.getType()){
 			case ARR1:
