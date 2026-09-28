@@ -4,6 +4,8 @@ import javafx.application.Platform;
 import  org.example.simu.framework.IEngine;
 import  org.example.simu.model.MyEngine;
 import  org.example.view.ISimulatorUI;
+import org.example.view.PizzaVisualisation;
+import org.example.view.SimulatorGUI;
 
 public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 	private IEngine engine;
@@ -23,17 +25,6 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		((Thread) engine).start();
 		//((Thread)engine).run(); // Never like this, why?
 	}
-	
-	@Override
-	public void decreaseSpeed() { // hidastetaan moottorisäiettä
-		engine.setDelay((long)(engine.getDelay()*1.10));
-	}
-
-	@Override
-	public void increaseSpeed() { // nopeutetaan moottorisäiettä
-		engine.setDelay((long)(engine.getDelay()*0.9));
-	}
-
 
 	/* Simulation results passing to the UI
 	 * Because FX-UI updates come from engine thread, they need to be directed to the JavaFX thread
@@ -45,6 +36,35 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 
 	@Override
 	public void visualiseCustomer() {
-		Platform.runLater(() -> ui.getVisualisation().newCustomer());
+		Platform.runLater(() -> {
+			// start the ball animation on the canvas.
+			ui.getVisualisation().newCustomer();
+
+			// Increasing the number of clients in the statistics sidebar
+			if (ui instanceof SimulatorGUI) {
+				((SimulatorGUI) ui).incrementCustomerCount();
+			}
+		});
 	}
+	@Override
+	public void decreaseSpeed() { // Slowdown
+		engine.setDelay((long)(engine.getDelay() * 1.10)); //Slowing down the engine logic
+
+		// slow down the movement of the balls on the canvas.
+		if (ui.getVisualisation() instanceof PizzaVisualisation) {
+			((PizzaVisualisation) ui.getVisualisation()).adjustAnimationSpeed(0.85);
+		}
+	}
+
+	@Override
+	public void increaseSpeed() { // speed up
+		engine.setDelay((long)(engine.getDelay() * 0.90)); //speed up the engine logic
+
+		// speeding up the movement of the balls on the canvas
+		if (ui.getVisualisation() instanceof PizzaVisualisation) {
+			((PizzaVisualisation) ui.getVisualisation()).adjustAnimationSpeed(1.20);
+		}
+	}
+
+
 }

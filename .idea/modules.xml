@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/RavintolaSimulator.iml" filepath="$PROJECT_DIR$/RavintolaSimulator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ravintola/ravintola.iml" filepath="$PROJECT_DIR$/ravintola/ravintola.iml" />
     </modules>
   </component>
 </project>

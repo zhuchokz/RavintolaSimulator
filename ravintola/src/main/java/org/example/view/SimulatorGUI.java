@@ -1,44 +1,36 @@
 package org.example.view;
 
 import java.text.DecimalFormat;
-import  org.example.controller.*;
+import org.example.controller.*;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
-import  org.example.simu.framework.Trace;
-import  org.example.simu.framework.Trace.Level;
 import javafx.scene.*;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.text.*;
-
-import java.text.DecimalFormat;
+import org.example.simu.framework.Trace;
+import org.example.simu.framework.Trace.Level;
 
 public class SimulatorGUI extends Application implements ISimulatorUI {
 
-	// Controller object (UI needs)
 	private IControllerVtoM controller;
 
-	// UI Components:
 	private TextField time;
 	private TextField delay;
-	private Label results;
-	private Label timeLabel;
-	private Label delayLabel;
-	private Label resultLabel;
-	
+
 	private Button startButton;
 	private Button slowButton;
 	private Button speedUpButton;
 
 	private IVisualisation display;
 
+	private int totalCustomersCount = 0;
+	private Label customerCountLabel;
+	private Label totalTimeLabel;
 
 	@Override
 	public void init() {
@@ -48,82 +40,92 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 
 	@Override
 	public void start(Stage primaryStage) {
-		// UI creation
 		try {
 			primaryStage.setOnCloseRequest(t -> {
-                Platform.exit();
-                System.exit(0);
-            });
+				Platform.exit();
+				System.exit(0);
+			});
 
-			primaryStage.setTitle("Simulator");
+			primaryStage.setTitle("Pizzeria Simulator");
 
-			startButton = new Button();
-			startButton.setText("Start simulation");
+			startButton = new Button("Start simulation");
 			startButton.setOnAction(event -> {
-                controller.startSimulation();
-                startButton.setDisable(true);
-            });
+				totalCustomersCount = 0;
+				updateStatisticsUI();
+				controller.startSimulation();
+				startButton.setDisable(true);
+			});
 
-			slowButton = new Button();
-			slowButton.setText("Slow down");
+			slowButton = new Button("Slow down");
 			slowButton.setOnAction(e -> controller.decreaseSpeed());
 
-			speedUpButton = new Button();
-			speedUpButton.setText("Speed up");
+			speedUpButton = new Button("Speed up");
 			speedUpButton.setOnAction(e -> controller.increaseSpeed());
 
-			timeLabel = new Label("Simulation time:");
-			timeLabel.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-	        time = new TextField("Give time");
-	        time.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-	        time.setPrefWidth(150);
+			Label labelTimeInput = new Label("Simulation time:");
+			labelTimeInput.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
+			time = new TextField("1000");
+			time.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
+			time.setPrefWidth(120);
 
-	        delayLabel = new Label("Delay:");
-			delayLabel.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-	        delay = new TextField("Give delay");
-	        delay.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-	        delay.setPrefWidth(150);
-	                	        
-	        resultLabel = new Label("Total time:");
-			resultLabel.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-	        results = new Label();
-	        results.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-	        results.setPrefWidth(150);
+			Label labelDelayInput = new Label("Delay (ms):");
+			labelDelayInput.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
+			delay = new TextField("100");
+			delay.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
+			delay.setPrefWidth(120);
 
-	        HBox hBox = new HBox();
-	        hBox.setPadding(new Insets(15, 12, 15, 12)); // margins up, right, bottom, left
-	        hBox.setSpacing(10);   // node distance 10 pixel
-	        
-	        GridPane grid = new GridPane();
-	        grid.setAlignment(Pos.CENTER);
-	        grid.setVgap(10);
-	        grid.setHgap(5);
+			Label statsHeader = new Label("--- STATISTICS ---");
+			statsHeader.setFont(Font.font("Tahoma", FontWeight.BOLD, 16));
 
-	        grid.add(timeLabel, 0, 0);   // column, row
-	        grid.add(time, 1, 0);
-	        grid.add(delayLabel, 0, 1);
-	        grid.add(delay, 1, 1);
-	        grid.add(resultLabel, 0, 2);
-	        grid.add(results, 1, 2);
-	        grid.add(startButton,0, 3);
-	        grid.add(speedUpButton, 0, 4);
-	        grid.add(slowButton, 1, 4);
-	        
-	        display = new Visualisation2(400,200);
-			//display = new Visualisation2(400,200);
+			customerCountLabel = new Label("Customers inside: 0");
+			customerCountLabel.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
+			customerCountLabel.setStyle("-fx-text-fill: #0000ff;"); // Синий цвет текста
 
-	        // Fill the box:
-	        hBox.getChildren().addAll(grid, (Canvas) display);
-	        
-	        Scene scene = new Scene(hBox);
-	        primaryStage.setScene(scene);
-	        primaryStage.show();
+			totalTimeLabel = new Label("Total execution time: -");
+			totalTimeLabel.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
+			totalTimeLabel.setStyle("-fx-text-fill: #008000;"); // Зеленый цвет текста
+
+			GridPane grid = new GridPane();
+			grid.setAlignment(Pos.TOP_LEFT);
+			grid.setVgap(12);
+			grid.setHgap(8);
+			grid.setPadding(new Insets(10));
+
+			grid.add(labelTimeInput, 0, 0);
+			grid.add(time, 1, 0);
+			grid.add(labelDelayInput, 0, 1);
+			grid.add(delay, 1, 1);
+
+			grid.add(startButton, 0, 2, 2, 1);
+			startButton.setMaxWidth(Double.MAX_VALUE);
+			grid.add(speedUpButton, 0, 3);
+			grid.add(slowButton, 1, 3);
+
+			grid.add(new Separator(), 0, 4, 2, 1);
+			grid.add(statsHeader, 0, 5, 2, 1);
+			grid.add(customerCountLabel, 0, 6, 2, 1);
+			grid.add(totalTimeLabel, 0, 7, 2, 1);
+
+			display = new PizzaVisualisation(800, 450);
+
+			HBox hBox = new HBox();
+			hBox.setPadding(new Insets(15));
+			hBox.setSpacing(20);
+			hBox.getChildren().addAll(grid, (Canvas) display);
+
+			Scene scene = new Scene(hBox);
+			primaryStage.setScene(scene);
+			primaryStage.setResizable(false);
+			primaryStage.show();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	/* UI interface methods (controller calls) */
+	private void updateStatisticsUI() {
+		customerCountLabel.setText("Customers inside: " + totalCustomersCount);
+	}
+
 	@Override
 	public double getTime(){
 		return Double.parseDouble(time.getText());
@@ -136,16 +138,23 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 
 	@Override
 	public void setEndingTime(double time) {
-		 DecimalFormat formatter = new DecimalFormat("#0.00");
-		 this.results.setText(formatter.format(time));
+		DecimalFormat formatter = new DecimalFormat("#0.00");
+		Platform.runLater(() -> {
+			this.totalTimeLabel.setText("Total execution time: " + formatter.format(time));
+			this.startButton.setDisable(false); // Включаем кнопку обратно по окончании
+		});
 	}
 
 	@Override
 	public IVisualisation getVisualisation() {
-		 return display;
+		return display;
 	}
 
-	/* JavaFX-application (UI) start-up */
+	public void incrementCustomerCount() {
+		totalCustomersCount++;
+		updateStatisticsUI();
+	}
+
 	public static void main(String[] args) {
 		launch(args);
 	}
