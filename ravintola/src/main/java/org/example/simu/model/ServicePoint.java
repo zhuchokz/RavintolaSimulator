@@ -14,7 +14,6 @@ public class ServicePoint {
 	private EventType eventTypeScheduled;
 	private boolean reserved = false;
 
-	// Параметры конструктора переведены на английский
 	public ServicePoint(ContinuousGenerator generator, EventList eventList, EventType eventType){
 		this.eventList = eventList;
 		this.generator = generator;
