@@ -101,6 +101,12 @@ public class ServicePoint {
 		return name;
 	}
 
+	public int getTotalServed() { return totalServed; }
+
+	public int getCapacity() { return capacity; }
+
+	public int getMaxQueueSize() { return maxQueueSize; }
+
 	// --- Results & Reporting Methods ---
 
 	public double getUtilization() {

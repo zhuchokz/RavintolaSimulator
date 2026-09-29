@@ -22,6 +22,8 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 	private TextField time;
 	private TextField delay;
 
+	private TextArea statsTextArea;
+
 	private Button startButton;
 	private Button slowButton;
 	private Button speedUpButton;
@@ -41,6 +43,13 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 	@Override
 	public void start(Stage primaryStage) {
 		try {
+			statsTextArea = new TextArea();
+			statsTextArea.setEditable(false);
+			statsTextArea.setWrapText(true);
+			statsTextArea.setPrefWidth(200);
+			statsTextArea.setPrefHeight(180);
+			statsTextArea.setPrefRowCount(15);
+
 			primaryStage.setOnCloseRequest(t -> {
 				Platform.exit();
 				System.exit(0);
@@ -52,6 +61,9 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 			startButton.setOnAction(event -> {
 				totalCustomersCount = 0;
 				updateStatisticsUI();
+				if (statsTextArea != null) {
+					statsTextArea.clear(); // Clear old report on new run
+				}
 				controller.startSimulation();
 				startButton.setDisable(true);
 			});
@@ -106,6 +118,8 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 			grid.add(customerCountLabel, 0, 6, 2, 1);
 			grid.add(totalTimeLabel, 0, 7, 2, 1);
 
+			grid.add(statsTextArea, 0, 8, 2, 1); //statsTextArea
+
 			display = new PizzaVisualisation(800, 450);
 
 			HBox hBox = new HBox();
@@ -153,6 +167,24 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 	public void incrementCustomerCount() {
 		totalCustomersCount++;
 		updateStatisticsUI();
+	}
+
+	public void decrementCustomerCount() {
+		totalCustomersCount--;
+		updateStatisticsUI();
+	}
+
+	// Used for outporting customer arrives and departures
+	public void logEvent(String text) {
+		if (statsTextArea != null) {
+			statsTextArea.appendText(text + "\n");
+		}
+	}
+
+	public void displayResults(String resultsText) {
+		if (statsTextArea != null) {
+			statsTextArea.setText(resultsText);
+		}
 	}
 
 	public static void main(String[] args) {

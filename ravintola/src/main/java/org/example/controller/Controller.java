@@ -2,6 +2,7 @@ package org.example.controller;
 
 import javafx.application.Platform;
 import  org.example.simu.framework.IEngine;
+import org.example.simu.model.CustomerType;
 import  org.example.simu.model.MyEngine;
 import  org.example.view.ISimulatorUI;
 import org.example.view.PizzaVisualisation;
@@ -35,17 +36,24 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 	}
 
 	@Override
-	public void visualiseCustomer() {
+	public void visualiseCustomer(int id, CustomerType type, String action) {
 		Platform.runLater(() -> {
-			// start the ball animation on the canvas.
-			ui.getVisualisation().newCustomer();
+			// Pass the data to the canvas
+			ui.getVisualisation().visualiseCustomer(id, type, action);
 
-			// Increasing the number of clients in the statistics sidebar
+			// Update the numbers on the UI text fields
 			if (ui instanceof SimulatorGUI) {
-				((SimulatorGUI) ui).incrementCustomerCount();
+				if ("ARRIVED".equals(action)) {
+					((SimulatorGUI) ui).incrementCustomerCount();
+					((SimulatorGUI) ui).logEvent(String.format("[+] Customer #%d (%s) arrived.", id, type));
+				} else if ("FINISHED".equals(action)) {
+					((SimulatorGUI) ui).decrementCustomerCount();
+					((SimulatorGUI) ui).logEvent(String.format("[-] Customer #%d (%s) left.", id, type));
+				}
 			}
 		});
 	}
+
 	@Override
 	public void decreaseSpeed() { // Slowdown
 		engine.setDelay((long)(engine.getDelay() * 1.10)); //Slowing down the engine logic
@@ -66,5 +74,12 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		}
 	}
 
-
+	@Override
+	public void showResults(String s) {
+		Platform.runLater(() -> {
+			if (ui instanceof SimulatorGUI) {
+				((SimulatorGUI) ui).displayResults(s);
+			}
+		});
+	}
 }

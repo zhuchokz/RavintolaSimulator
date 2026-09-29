@@ -1,5 +1,7 @@
 package org.example.view;
 
+import org.example.simu.model.CustomerType;
+
 import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -8,15 +10,19 @@ import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.InputStream;
 
+
 public class PizzaVisualisation extends Canvas implements IVisualisation {
     private GraphicsContext gc;
     private Image backgroundImage;
-    private List<CustomerSprite> customers = new ArrayList<>();
+    // private List<CustomerSprite> customers = new ArrayList<>();
+    private Map<Integer, CustomerSprite> customers = new ConcurrentHashMap<>();
     private Random random = new Random();
     private double currentBallSpeed = 3.5;
 
@@ -126,6 +132,12 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         return null;
     }
 
+    @Override
+    public void resetVisuals() {
+        Platform.runLater(() -> customers.clear());
+    }
+
+    @Override
     public void clearDisplay() {
         if (backgroundImage != null) {
             gc.drawImage(backgroundImage, 0, 0, this.getWidth(), this.getHeight());
@@ -136,53 +148,102 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
     }
 
     @Override
-    public void newCustomer() {
+    public void visualiseCustomer(int id, CustomerType type, String action) {
         Platform.runLater(() -> {
-            int chance = random.nextInt(100);
+            // 1. Spawning
+            if ("ARRIVED".equals(action)) {
+                Image img = blueCustomerImage;
+                Color col = Color.BLUE;
+                if (type == CustomerType.ONLINE) {
+                    img = greenCustomerImage;
+                    col = Color.DARKGREEN;
+                } else if (type == CustomerType.TAKEAWAY) {
+                    img = redCustomerImage;
+                    col = Color.RED;
+                }
+                customers.put(id, new CustomerSprite(img, col, type));
+                return;
+            }
 
-            if (chance < 35) {
-                // Delivery (Online) — Green character
-                customers.add(new CustomerSprite(PATH_ONLINE, greenCustomerImage, Color.DARKGREEN, false));
-            } else if (chance < 70) {
-                // Takeaway customer — Red character
-                customers.add(new CustomerSprite(PATH_TO_OVENS, redCustomerImage, Color.RED, false));
-            } else {
-                // Restaurant customer — Blue character, stays at tables
-                customers.add(new CustomerSprite(PATH_TO_OVENS, blueCustomerImage, Color.BLUE, true));
+            CustomerSprite sprite = customers.get(id);
+            if (sprite == null) return;
+
+            // 2. Customer completed order -> Smooth exit path
+            if ("FINISHED".equals(action)) {
+                sprite.isLeaving = true;
+                if (sprite.type == CustomerType.ONLINE) {
+                    sprite.addWaypoint(690, 420); // Delivery door exit
+                } else {
+                    sprite.addWaypoint(585, 420); // Main exit door
+                }
+                return;
+            }
+
+            // 3. Station actions with L-shaped hallway waypoints
+            switch (action) {
+                case "ORDER":
+                    sprite.addWaypoint(145, 185); // Queue
+                    sprite.addWaypoint(245, 185); // Counter
+                    break;
+
+                case "PAY":
+                    sprite.addWaypoint(355, 185); // Queue
+                    sprite.addWaypoint(455, 185); // Counter
+                    break;
+
+                case "OVEN":
+                    if (sprite.type == CustomerType.ONLINE) {
+                        sprite.addWaypoint(565, 185);
+                        sprite.addWaypoint(715, 185);
+                    } else {
+                        sprite.addWaypoint(565, 185);
+                        sprite.addWaypoint(690, 185);
+                    }
+                    break;
+
+                case "PICKUP":
+                    sprite.addWaypoint(585, 305); // Move down to Pickup
+                    break;
+
+                case "COURIER":
+                    sprite.addWaypoint(690, 305); // Move down to Courier station
+                    break;
+
+                case "DRINK":
+                    sprite.addWaypoint(350, 305); // Drink kiosk
+                    break;
+
+                case "TABLE":
+                    sprite.addWaypoint(470, 305); // Dining table
+                    break;
             }
         });
     }
 
     private void updateCustomerPositions() {
-        for (int i = customers.size() - 1; i >= 0; i--) {
-            CustomerSprite c = customers.get(i);
-            int[] target = c.path[c.currentStage];
+        for (Map.Entry<Integer, CustomerSprite> entry : customers.entrySet()) {
+            CustomerSprite c = entry.getValue();
 
-            double dx = target[0] - c.x;
-            double dy = target[1] - c.y;
-            double distance = Math.sqrt(dx * dx + dy * dy);
+            if (c.hasWaypoints()) {
+                double[] target = c.getCurrentTarget();
+                double dx = target[0] - c.x;
+                double dy = target[1] - c.y;
+                double distance = Math.sqrt(dx * dx + dy * dy);
 
-            if (distance < 4) {
-                if (c.currentStage < c.path.length - 1) {
-                    c.currentStage++;
+                if (distance > 2.0) {
+                    // Clamp speed so sprite does not overshoot or shake
+                    double speed = Math.min(this.currentBallSpeed, distance);
+                    c.x += (dx / distance) * speed;
+                    c.y += (dy / distance) * speed;
                 } else {
-                    if (c.path == PATH_TO_OVENS) {
-                        c.currentStage = 0;
-
-                        // Random assignment for restaurant clients: 50% tables, 50% exit
-                        if (c.isRestaurantType && random.nextBoolean()) {
-                            c.path = PATH_THROUGH_TABLES;
-                        } else {
-                            c.path = PATH_DIRECT_EXIT;
-                        }
-                    } else {
-                        customers.remove(i);
-                    }
+                    // Reached waypoint: snap position and proceed to next waypoint
+                    c.x = target[0];
+                    c.y = target[1];
+                    c.advanceWaypoint();
                 }
-            } else {
-                double speed = this.currentBallSpeed;
-                c.x += (dx / distance) * speed;
-                c.y += (dy / distance) * speed;
+            } else if (c.isLeaving) {
+                // Reached final exit circle -> remove sprite from canvas
+                customers.remove(entry.getKey());
             }
         }
     }
@@ -201,7 +262,7 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
                     clearDisplay();
 
                     // Rendering all the customers on the canvas
-                    for (CustomerSprite c : customers) {
+                    for (CustomerSprite c : customers.values()) {
                         if (c.characterImage != null) {
                             // Draws the character icon, centering it. Size is set to 24x24 px.
                             gc.drawImage(c.characterImage, c.x - 12, c.y - 12, 24, 24);
@@ -224,19 +285,43 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
 
     private static class CustomerSprite {
         double x, y;
-        int currentStage = 1;
-        int[][] path;
         Image characterImage;
         Color color;
-        boolean isRestaurantType;
+        CustomerType type;
+        boolean isLeaving = false;
+        private final List<double[]> path = new ArrayList<>();
 
-        CustomerSprite(int[][] path, Image image, Color color, boolean isRestaurantType) {
-            this.path = path;
-            this.characterImage = image;
+        CustomerSprite(Image img, Color color, CustomerType type) {
+            this.characterImage = img;
             this.color = color;
-            this.isRestaurantType = isRestaurantType;
-            this.x = path[0][0];
-            this.y = path[0][1];
+            this.type = type;
+
+            // Correct initial spawn locations
+            if (type == CustomerType.ONLINE) {
+                this.x = 455; // Payment/kitchen area
+                this.y = 185;
+            } else {
+                this.x = 55;  // Entrance door
+                this.y = 185;
+            }
+        }
+
+        void addWaypoint(double x, double y) {
+            path.add(new double[]{x, y});
+        }
+
+        boolean hasWaypoints() {
+            return !path.isEmpty();
+        }
+
+        double[] getCurrentTarget() {
+            return path.get(0);
+        }
+
+        void advanceWaypoint() {
+            if (!path.isEmpty()) {
+                path.remove(0);
+            }
         }
     }
 

@@ -40,7 +40,7 @@ public class Customer {
 			this.wantsDrink = false;
 		}
 
-		Trace.out(Trace.Level.INFO, "New customer #" + id + " arrived at  " + arrivalTime);
+		Trace.out(Trace.Level.INFO, "New customer #" + id + " with type " + getType().toString() + " arrived at  " + arrivalTime);
 	}
 
 	public CustomerType getType() {
@@ -80,7 +80,7 @@ public class Customer {
 	}
 	
 	public void reportResults() {
-		Trace.out(Trace.Level.INFO, "\nCustomer " + id + " ready! ");
+		Trace.out(Trace.Level.INFO, "\nCustomer " + id + "with type " + getType().toString() + " ready! ");
 		Trace.out(Trace.Level.INFO, "Customer "   + id + " arrived: " + arrivalTime);
 		Trace.out(Trace.Level.INFO,"Customer "    + id + " removed: " + removalTime);
 		Trace.out(Trace.Level.INFO,"Customer "    + id + " stayed: "  + (removalTime - arrivalTime));

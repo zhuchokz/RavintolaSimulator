@@ -72,23 +72,27 @@ public class MyEngine extends Engine {
 		switch ((EventType)t.getType()){
 		case ARR:
 			customer = new Customer();
+			controller.visualiseCustomer(customer.getId(), customer.getType(), "ARRIVED");
 			if (customer.getType() == CustomerType.ONLINE) {
 				routeToOven(customer);
+				controller.visualiseCustomer(customer.getId(), customer.getType(), "OVEN");
 			} else {
 				orderPoint.addQueue(customer);
+				controller.visualiseCustomer(customer.getId(), customer.getType(), "ORDER");
 			}
 			arrivalProcess.generateNext();
-			controller.visualiseCustomer();
 			break;
 
 		case DEP_ORDER:
 			customer = orderPoint.removeQueue();
 			payPoint.addQueue(customer);
+			controller.visualiseCustomer(customer.getId(), customer.getType(), "PAY");
 			break;
 
 		case DEP_PAY:
 			customer = payPoint.removeQueue();
 			routeToOven(customer);
+			controller.visualiseCustomer(customer.getId(), customer.getType(), "OVEN");
 			break;
 
 		case DEP_OVEN1:
@@ -101,8 +105,10 @@ public class MyEngine extends Engine {
 
 			if (customer.getType() == CustomerType.ONLINE) {
 				courierPoint.addQueue(customer);
+				controller.visualiseCustomer(customer.getId(), customer.getType(), "COURIER");
 			} else {
 				pickupPoint.addQueue(customer);
+				controller.visualiseCustomer(customer.getId(), customer.getType(), "PICKUP");
 			}
 			break;
 
@@ -113,8 +119,10 @@ public class MyEngine extends Engine {
 			} else if (customer.getType() == CustomerType.DINEIN) {
 				if (customer.wantsDrink()) {
 					drinkPoint.addQueue(customer);
+					controller.visualiseCustomer(customer.getId(), customer.getType(), "DRINK");
 				} else {
 					tablePoint.addQueue(customer);
+					controller.visualiseCustomer(customer.getId(), customer.getType(), "TABLE");
 				}
 			}
 			break;
@@ -122,6 +130,7 @@ public class MyEngine extends Engine {
 		case DEP_DRINK:
 			customer = drinkPoint.removeQueue();
 			tablePoint.addQueue(customer);
+			controller.visualiseCustomer(customer.getId(), customer.getType(), "TABLE");
 			break;
 
 		case DEP_TABLE:
@@ -139,20 +148,40 @@ public class MyEngine extends Engine {
 	private void finishCustomer(Customer c) {
 		c.setRemovalTime(Clock.getInstance().getTime());
 		c.reportResults();
+		controller.visualiseCustomer(c.getId(), c.getType(), "FINISHED");
 	}
 
 	@Override
 	protected void results() {
+		double totalTime = Clock.getInstance().getTime();
+
+		// Console output (original logic)
 		System.out.println("=========================================");
 		System.out.println("       SIMULATION RESULTS REPORT        ");
 		System.out.println("=========================================");
-		System.out.printf("Total Simulation Time: %.2f minutes\n\n", Clock.getInstance().getTime());
+		System.out.printf("Total Simulation Time: %.2f minutes\n\n", totalTime);
+
+		// Build string output for JavaFX sidebar
+		StringBuilder sb = new StringBuilder();
+		sb.append("=========================================\n");
+		sb.append("       SIMULATION RESULTS REPORT        \n");
+		sb.append("=========================================\n");
+		sb.append(String.format("Total Duration: %.2f minutes\n\n", totalTime));
 
 		for (ServicePoint sp : servicePoints) {
-			sp.reportResults();
+			sp.reportResults(); // Console reporting per station
+
+			// Collect station statistics for GUI
+			sb.append(String.format("--- %s ---\n", sp.getName()));
+			sb.append(String.format("  Capacity: %d\n", sp.getCapacity()));
+			sb.append(String.format("  Total Serviced: %d\n", sp.getTotalServed()));
+			sb.append(String.format("  Utilization Rate: %.2f%%\n", sp.getUtilization()));
+			sb.append(String.format("  Avg Queue Length: %.2f customers\n", sp.getAverageQueueLength()));
+			sb.append(String.format("  Max Queue Length: %d customers\n\n", sp.getMaxQueueSize()));
 		}
 
-		// new gui
-		controller.showEndTime(Clock.getInstance().getTime());
+		// Send data to Controller
+		controller.showEndTime(totalTime);
+		controller.showResults(sb.toString());
 	}
 }
