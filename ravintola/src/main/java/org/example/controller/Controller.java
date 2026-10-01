@@ -1,10 +1,11 @@
 package org.example.controller;
 
 import javafx.application.Platform;
-import  org.example.simu.framework.IEngine;
+import org.example.simu.framework.IEngine;
+import org.example.simu.model.Customer;
 import org.example.simu.model.CustomerType;
-import  org.example.simu.model.MyEngine;
-import  org.example.view.ISimulatorUI;
+import org.example.simu.model.MyEngine;
+import org.example.view.ISimulatorUI;
 import org.example.view.PizzaVisualisation;
 import org.example.view.SimulatorGUI;
 
@@ -19,6 +20,8 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 	/* Engine control: */
 	@Override
 	public void startSimulation() {
+		Customer.setDrinkProbability(ui.getDrinkProbability());
+
 		engine = new MyEngine(this); // new Engine thread is created for every simulation
 		engine.setSimulationTime(ui.getTime());
 		engine.setDelay(ui.getDelay());

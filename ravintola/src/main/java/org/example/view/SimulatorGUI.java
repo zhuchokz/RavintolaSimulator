@@ -14,6 +14,7 @@ import javafx.scene.layout.*;
 import javafx.scene.text.*;
 import org.example.simu.framework.Trace;
 import org.example.simu.framework.Trace.Level;
+import org.example.simu.model.Customer;
 
 public class SimulatorGUI extends Application implements ISimulatorUI {
 
@@ -33,6 +34,8 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 	private int totalCustomersCount = 0;
 	private Label customerCountLabel;
 	private Label totalTimeLabel;
+
+	private Slider drinkProbabilitySlider;
 
 	@Override
 	public void init() {
@@ -86,6 +89,21 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 			delay.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
 			delay.setPrefWidth(120);
 
+			Label drinkLabel = new Label("Drink Probability:");
+			drinkLabel.setFont(Font.font("Tahoma", FontWeight.NORMAL, 14));
+			drinkProbabilitySlider = new Slider(0, 100, 50); // Min: 0, Max: 100, Initial: 50
+			drinkProbabilitySlider.setMajorTickUnit(50);
+			drinkProbabilitySlider.setMinorTickCount(0);
+			drinkProbabilitySlider.setSnapToTicks(true);      // Forces 0, 50, or 100 only
+			drinkProbabilitySlider.setShowTickMarks(true);
+			drinkProbabilitySlider.setShowTickLabels(true);
+			drinkProbabilitySlider.setPrefWidth(160);
+
+			drinkProbabilitySlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+				double prob = newValue.doubleValue() / 100.0;
+				Customer.setDrinkProbability(prob);
+			});
+
 			Label statsHeader = new Label("--- STATISTICS ---");
 			statsHeader.setFont(Font.font("Tahoma", FontWeight.BOLD, 16));
 
@@ -110,15 +128,18 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 
 			grid.add(startButton, 0, 2, 2, 1);
 			startButton.setMaxWidth(Double.MAX_VALUE);
-			grid.add(speedUpButton, 0, 3);
-			grid.add(slowButton, 1, 3);
+			grid.add(speedUpButton, 0, 4);
+			grid.add(slowButton, 1, 4);
 
-			grid.add(new Separator(), 0, 4, 2, 1);
-			grid.add(statsHeader, 0, 5, 2, 1);
-			grid.add(customerCountLabel, 0, 6, 2, 1);
-			grid.add(totalTimeLabel, 0, 7, 2, 1);
+			grid.add(drinkLabel, 0, 3);
+			grid.add(drinkProbabilitySlider, 1, 3);
 
-			grid.add(statsTextArea, 0, 8, 2, 1); //statsTextArea
+			grid.add(new Separator(), 0, 5, 2, 1);
+			grid.add(statsHeader, 0, 6, 2, 1);
+			grid.add(customerCountLabel, 0, 7, 2, 1);
+			grid.add(totalTimeLabel, 0, 8, 2, 1);
+
+			grid.add(statsTextArea, 0, 9, 2, 1); //statsTextArea
 
 			display = new PizzaVisualisation(800, 450);
 
@@ -157,6 +178,12 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 			this.totalTimeLabel.setText("Total execution time: " + formatter.format(time));
 			this.startButton.setDisable(false); // Включаем кнопку обратно по окончании
 		});
+	}
+
+	@Override
+	public double getDrinkProbability() {
+		// Converts slider value (0, 50, 100) to probability (0.0, 0.5, 1.0)
+		return drinkProbabilitySlider.getValue() / 100.0;
 	}
 
 	@Override

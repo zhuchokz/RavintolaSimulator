@@ -12,7 +12,9 @@ public class Customer {
 	private double removalTime;
 	private int id;
 	private CustomerType type;
+
 	private boolean wantsDrink;
+	private static volatile double drinkProbability = 0.5;
 
 	private static int i = 1;
 	private static double totalStayTime = 0;
@@ -35,12 +37,12 @@ public class Customer {
 		this.arrivalTime = Clock.getInstance().getTime();
 
 		if (this.type == CustomerType.DINEIN) {
-			this.wantsDrink = random.nextBoolean();
+			this.wantsDrink = random.nextDouble() < drinkProbability;
 		} else {
 			this.wantsDrink = false;
 		}
 
-		Trace.out(Trace.Level.INFO, "New customer #" + id + " with type " + getType().toString() + " arrived at  " + arrivalTime);
+		Trace.out(Trace.Level.INFO, "New customer #" + id + " with type " + getType().toString() + " and drink% " + getDrinkProbability() + " arrived at  " + arrivalTime);
 	}
 
 	public CustomerType getType() {
@@ -77,6 +79,17 @@ public class Customer {
 
 	public void setArrivalTime(double arrivalTime) {
 		this.arrivalTime = arrivalTime;
+	}
+
+	public static void setDrinkProbability(double probability) {
+		drinkProbability = probability;
+	}
+
+	public double getDrinkProbability() {
+		if (this.type == CustomerType.DINEIN) {
+			return drinkProbability;
+		}
+		return 0.0;
 	}
 	
 	public void reportResults() {
