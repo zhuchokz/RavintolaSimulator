@@ -21,6 +21,9 @@ public class MyEngine extends Engine {
 	private ServicePoint pickupPoint;
 	private ServicePoint courierPoint;
 
+	private volatile boolean paused = false;
+	private volatile boolean stopped = false;
+
 	public MyEngine(IControllerMtoV controller){ // NEW
 		super(controller); // NEW
 
@@ -50,6 +53,31 @@ public class MyEngine extends Engine {
 		arrivalProcess.generateNext();	 // First arrival in the system
 	}
 
+	public void setStationCapacities(int o1Cap, int o2Cap, int tableCap, int courierCap) {
+		oven1.setCapacity(o1Cap);
+		oven2.setCapacity(o2Cap);
+		tablePoint.setCapacity(tableCap);
+		courierPoint.setCapacity(courierCap);
+	}
+
+	public void setArrivalPace(String pace) {
+		double meanInterval = 5.0; // Default Normal
+		if ("Fast (2.5s)".equals(pace)) {
+			meanInterval = 2.5;
+		} else if ("Slow (10s)".equals(pace)) {
+			meanInterval = 10.0;
+		}
+		arrivalProcess = new ArrivalProcess(new Negexp(meanInterval, 2), eventList, EventType.ARR);
+	}
+
+	public void togglePause() {
+		this.paused = !this.paused;
+	}
+
+	public boolean isPaused() {
+		return paused;
+	}
+
 	private void routeToOven(Customer c) {
 		if (!oven1.isReserved()) {
 			oven1.addQueue(c); // Put in Oven 1 if it has space
@@ -68,87 +96,100 @@ public class MyEngine extends Engine {
 	@Override
 	protected void runEvent(Event t) {  // B phase events
 		Customer customer;
+		while (paused) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				return;
+			}
+		}
+		if (stopped) return;
+		switch ((EventType) t.getType()) {
+			case ARR:
+				customer = new Customer();
+				controller.visualiseCustomer(customer.getId(), customer.getType(), "ARRIVED");
+				if (customer.getType() == CustomerType.ONLINE) {
+					routeToOven(customer);
+					controller.visualiseCustomer(customer.getId(), customer.getType(), "OVEN");
+				} else {
+					orderPoint.addQueue(customer);
+					controller.visualiseCustomer(customer.getId(), customer.getType(), "ORDER");
+				}
+				arrivalProcess.generateNext();
+				break;
 
-		switch ((EventType)t.getType()){
-		case ARR:
-			customer = new Customer();
-			controller.visualiseCustomer(customer.getId(), customer.getType(), "ARRIVED");
-			if (customer.getType() == CustomerType.ONLINE) {
+			case DEP_ORDER:
+				customer = orderPoint.removeQueue();
+				payPoint.addQueue(customer);
+				controller.visualiseCustomer(customer.getId(), customer.getType(), "PAY");
+				break;
+
+			case DEP_PAY:
+				customer = payPoint.removeQueue();
 				routeToOven(customer);
 				controller.visualiseCustomer(customer.getId(), customer.getType(), "OVEN");
-			} else {
-				orderPoint.addQueue(customer);
-				controller.visualiseCustomer(customer.getId(), customer.getType(), "ORDER");
-			}
-			arrivalProcess.generateNext();
-			break;
+				break;
 
-		case DEP_ORDER:
-			customer = orderPoint.removeQueue();
-			payPoint.addQueue(customer);
-			controller.visualiseCustomer(customer.getId(), customer.getType(), "PAY");
-			break;
-
-		case DEP_PAY:
-			customer = payPoint.removeQueue();
-			routeToOven(customer);
-			controller.visualiseCustomer(customer.getId(), customer.getType(), "OVEN");
-			break;
-
-		case DEP_OVEN1:
-		case DEP_OVEN2:
-			if (t.getType() == EventType.DEP_OVEN1) {
-				customer = oven1.removeQueue();
-			} else {
-				customer = oven2.removeQueue();
-			}
-
-			if (customer.getType() == CustomerType.ONLINE) {
-				courierPoint.addQueue(customer);
-				controller.visualiseCustomer(customer.getId(), customer.getType(), "COURIER");
-			} else {
-				pickupPoint.addQueue(customer);
-				controller.visualiseCustomer(customer.getId(), customer.getType(), "PICKUP");
-			}
-			break;
-
-		case DEP_PICKUP:
-			customer = pickupPoint.removeQueue();
-			if  (customer.getType() == CustomerType.TAKEAWAY) {
-				finishCustomer(customer);
-			} else if (customer.getType() == CustomerType.DINEIN) {
-				if (customer.wantsDrink()) {
-					drinkPoint.addQueue(customer);
-					controller.visualiseCustomer(customer.getId(), customer.getType(), "DRINK");
+			case DEP_OVEN1:
+			case DEP_OVEN2:
+				if (t.getType() == EventType.DEP_OVEN1) {
+					customer = oven1.removeQueue();
 				} else {
-					tablePoint.addQueue(customer);
-					controller.visualiseCustomer(customer.getId(), customer.getType(), "TABLE");
+					customer = oven2.removeQueue();
 				}
-			}
-			break;
 
-		case DEP_DRINK:
-			customer = drinkPoint.removeQueue();
-			tablePoint.addQueue(customer);
-			controller.visualiseCustomer(customer.getId(), customer.getType(), "TABLE");
-			break;
+				if (customer.getType() == CustomerType.ONLINE) {
+					courierPoint.addQueue(customer);
+					controller.visualiseCustomer(customer.getId(), customer.getType(), "COURIER");
+				} else {
+					pickupPoint.addQueue(customer);
+					controller.visualiseCustomer(customer.getId(), customer.getType(), "PICKUP");
+				}
+				break;
 
-		case DEP_TABLE:
-			customer = tablePoint.removeQueue();
-			finishCustomer(customer);
-			break;
+			case DEP_PICKUP:
+				customer = pickupPoint.removeQueue();
+				if (customer.getType() == CustomerType.TAKEAWAY) {
+					finishCustomer(customer);
+				} else if (customer.getType() == CustomerType.DINEIN) {
+					if (customer.wantsDrink()) {
+						drinkPoint.addQueue(customer);
+						controller.visualiseCustomer(customer.getId(), customer.getType(), "DRINK");
+					} else {
+						tablePoint.addQueue(customer);
+						controller.visualiseCustomer(customer.getId(), customer.getType(), "TABLE");
+					}
+				}
+				break;
 
-		case DEP_COURIER:
-			customer = courierPoint.removeQueue();
-			finishCustomer(customer);
-			break;
-		}	
+			case DEP_DRINK:
+				customer = drinkPoint.removeQueue();
+				tablePoint.addQueue(customer);
+				controller.visualiseCustomer(customer.getId(), customer.getType(), "TABLE");
+				break;
+
+			case DEP_TABLE:
+				customer = tablePoint.removeQueue();
+				finishCustomer(customer);
+				break;
+
+			case DEP_COURIER:
+				customer = courierPoint.removeQueue();
+				finishCustomer(customer);
+				break;
+		}
 	}
 
 	private void finishCustomer(Customer c) {
 		c.setRemovalTime(Clock.getInstance().getTime());
 		c.reportResults();
 		controller.visualiseCustomer(c.getId(), c.getType(), "FINISHED");
+	}
+
+	public void stopSimulation() {
+		this.stopped = true;
+		this.paused = false;
+		setSimulationTime(0);
 	}
 
 	@Override

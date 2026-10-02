@@ -1,6 +1,8 @@
 package org.example.view;
 
 import java.text.DecimalFormat;
+
+import javafx.beans.value.ChangeListener;
 import org.example.controller.*;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -25,7 +27,7 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 
 	private TextArea statsTextArea;
 
-	private Button startButton;
+	private Button startButton, pauseButton;
 	private Button slowButton;
 	private Button speedUpButton;
 
@@ -36,6 +38,9 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 	private Label totalTimeLabel;
 
 	private Slider drinkProbabilitySlider;
+	private Slider oven1Slider, oven2Slider, tableSlider, courierSlider;
+	private ChoiceBox<String> paceChoiceBox;
+	private Slider dineInMixSlider, takeawayMixSlider, onlineMixSlider;
 
 	@Override
 	public void init() {
@@ -46,129 +51,307 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 	@Override
 	public void start(Stage primaryStage) {
 		try {
-			statsTextArea = new TextArea();
-			statsTextArea.setEditable(false);
-			statsTextArea.setWrapText(true);
-			statsTextArea.setPrefWidth(200);
-			statsTextArea.setPrefHeight(180);
-			statsTextArea.setPrefRowCount(15);
-
+			primaryStage.setTitle("Pizzeria Simulator");
 			primaryStage.setOnCloseRequest(t -> {
 				Platform.exit();
 				System.exit(0);
 			});
 
-			primaryStage.setTitle("Pizzeria Simulator");
+			// 1. Build components
+			VBox parameterSidebar = createParameterSidebar();
+			VBox statsSidebar = createStatsSidebar();
+			display = new PizzaVisualisation(1242, 700);
 
-			startButton = new Button("Start simulation");
-			startButton.setOnAction(event -> {
-				totalCustomersCount = 0;
-				updateStatisticsUI();
-				if (statsTextArea != null) {
-					statsTextArea.clear(); // Clear old report on new run
-				}
-				controller.startSimulation();
-				startButton.setDisable(true);
-			});
+			// 2. Root Layout (Left: Sidebar, Center: Canvas, Right: Stats)
+			HBox mainLayout = new HBox(15);
+			mainLayout.setPadding(new Insets(10));
+			mainLayout.getChildren().addAll(parameterSidebar, (Canvas) display, statsSidebar);
 
-			slowButton = new Button("Slow down");
-			slowButton.setOnAction(e -> controller.decreaseSpeed());
-
-			speedUpButton = new Button("Speed up");
-			speedUpButton.setOnAction(e -> controller.increaseSpeed());
-
-			Label labelTimeInput = new Label("Simulation time:");
-			labelTimeInput.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
-			time = new TextField("1000");
-			time.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
-			time.setPrefWidth(120);
-
-			Label labelDelayInput = new Label("Delay (ms):");
-			labelDelayInput.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
-			delay = new TextField("100");
-			delay.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
-			delay.setPrefWidth(120);
-
-			Label drinkLabel = new Label("Drink Probability:");
-			drinkLabel.setFont(Font.font("Tahoma", FontWeight.NORMAL, 14));
-			drinkProbabilitySlider = new Slider(0, 100, 50); // Min: 0, Max: 100, Initial: 50
-			drinkProbabilitySlider.setMajorTickUnit(50);
-			drinkProbabilitySlider.setMinorTickCount(0);
-			drinkProbabilitySlider.setSnapToTicks(true);      // Forces 0, 50, or 100 only
-			drinkProbabilitySlider.setShowTickMarks(true);
-			drinkProbabilitySlider.setShowTickLabels(true);
-			drinkProbabilitySlider.setPrefWidth(160);
-
-			drinkProbabilitySlider.valueProperty().addListener((observable, oldValue, newValue) -> {
-				double prob = newValue.doubleValue() / 100.0;
-				Customer.setDrinkProbability(prob);
-			});
-
-			Label statsHeader = new Label("--- STATISTICS ---");
-			statsHeader.setFont(Font.font("Tahoma", FontWeight.BOLD, 16));
-
-			customerCountLabel = new Label("Customers inside: 0");
-			customerCountLabel.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
-			customerCountLabel.setStyle("-fx-text-fill: #0000ff;"); // Синий цвет текста
-
-			totalTimeLabel = new Label("Total execution time: -");
-			totalTimeLabel.setFont(Font.font("Tahoma", FontWeight.NORMAL, 16));
-			totalTimeLabel.setStyle("-fx-text-fill: #008000;"); // Зеленый цвет текста
-
-			GridPane grid = new GridPane();
-			grid.setAlignment(Pos.TOP_LEFT);
-			grid.setVgap(12);
-			grid.setHgap(8);
-			grid.setPadding(new Insets(10));
-
-			grid.add(labelTimeInput, 0, 0);
-			grid.add(time, 1, 0);
-			grid.add(labelDelayInput, 0, 1);
-			grid.add(delay, 1, 1);
-
-			grid.add(startButton, 0, 2, 2, 1);
-			startButton.setMaxWidth(Double.MAX_VALUE);
-			grid.add(speedUpButton, 0, 4);
-			grid.add(slowButton, 1, 4);
-
-			grid.add(drinkLabel, 0, 3);
-			grid.add(drinkProbabilitySlider, 1, 3);
-
-			grid.add(new Separator(), 0, 5, 2, 1);
-			grid.add(statsHeader, 0, 6, 2, 1);
-			grid.add(customerCountLabel, 0, 7, 2, 1);
-			grid.add(totalTimeLabel, 0, 8, 2, 1);
-
-			grid.add(statsTextArea, 0, 9, 2, 1); //statsTextArea
-
-			display = new PizzaVisualisation(800, 450);
-
-			HBox hBox = new HBox();
-			hBox.setPadding(new Insets(15));
-			hBox.setSpacing(20);
-			hBox.getChildren().addAll(grid, (Canvas) display);
-
-			Scene scene = new Scene(hBox);
+			Scene scene = new Scene(mainLayout);
 			primaryStage.setScene(scene);
 			primaryStage.setResizable(false);
 			primaryStage.show();
-		} catch(Exception e) {
+
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void updateStatisticsUI() {
-		customerCountLabel.setText("Customers inside: " + totalCustomersCount);
+	// -------------------------------------------------------------------------
+	// LEFT PARAMETER SIDEBAR LAYOUT
+	// -------------------------------------------------------------------------
+	private VBox createParameterSidebar() {
+		VBox panel = new VBox(12);
+		panel.setPadding(new Insets(10));
+		panel.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dcdcdc; -fx-border-width: 1;");
+		panel.setPrefWidth(260);
+
+		// --- SECTION 1: STATIONS PARAMETERS ---
+		Label stationHeader = createSectionHeader("Station Capacities");
+		oven1Slider = createSnapSlider(2, 12, 4);
+		oven2Slider = createSnapSlider(2, 12, 4);
+		tableSlider = createSnapSlider(5, 15, 10);
+		courierSlider = createSnapSlider(1, 5, 3);
+
+		VBox stationBox = new VBox(6,
+				stationHeader,
+				createLabeledControl("Oven 1 Capacity", oven1Slider),
+				createLabeledControl("Oven 2 Capacity", oven2Slider),
+				createLabeledControl("Tables Capacity", tableSlider),
+				createLabeledControl("Couriers Capacity", courierSlider)
+		);
+
+		// --- SECTION 2: CUSTOMERS & DEMOGRAPHICS ---
+		Label customerHeader = createSectionHeader("Customer Parameters");
+
+		paceChoiceBox = new ChoiceBox<>();
+		paceChoiceBox.getItems().addAll("Fast (2.5s)", "Normal (5.0s)", "Slow (10s)");
+		paceChoiceBox.setValue("Normal (5.0s)");
+		paceChoiceBox.setMaxWidth(Double.MAX_VALUE);
+
+		drinkProbabilitySlider = new Slider(0, 100, 50);
+		drinkProbabilitySlider.setMajorTickUnit(50);
+		drinkProbabilitySlider.setMinorTickCount(0);
+		drinkProbabilitySlider.setSnapToTicks(true);
+		drinkProbabilitySlider.setShowTickMarks(true);
+		drinkProbabilitySlider.setShowTickLabels(true);
+
+		// Attach live listener for drink probability
+		drinkProbabilitySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+			Customer.setDrinkProbability(newVal.doubleValue() / 100.0);
+		});
+
+		// 3 Independent Type Mix Sliders
+		dineInMixSlider = createMixSlider(40);
+		takeawayMixSlider = createMixSlider(40);
+		onlineMixSlider = createMixSlider(20);
+
+		// Attach live listener for customer weight mix
+		ChangeListener<Number> mixListener = (obs, oldVal, newVal) -> {
+			Customer.setCustomerWeights(
+					dineInMixSlider.getValue(),
+					takeawayMixSlider.getValue(),
+					onlineMixSlider.getValue()
+			);
+		};
+		dineInMixSlider.valueProperty().addListener(mixListener);
+		takeawayMixSlider.valueProperty().addListener(mixListener);
+		onlineMixSlider.valueProperty().addListener(mixListener);
+
+		VBox customerBox = new VBox(6,
+				customerHeader,
+				createLabeledControl("Arrival Pace", paceChoiceBox),
+				createLabeledControl("Dine-In Drink Chance", drinkProbabilitySlider),
+				createLabeledControl("Dine-In Weight", dineInMixSlider),
+				createLabeledControl("Takeaway Weight", takeawayMixSlider),
+				createLabeledControl("Online Weight", onlineMixSlider)
+		);
+
+		// --- SECTION 3: TIME & EXECUTION CONTROLS ---
+		Label execHeader = createSectionHeader("Time & Execution");
+
+		time = new TextField("1000");
+		delay = new TextField("100");
+
+		startButton = new Button("Start Simulation");
+		startButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;");
+		startButton.setMaxWidth(Double.MAX_VALUE);
+		startButton.setOnAction(event -> {
+			if ("Start Simulation".equals(startButton.getText())) {
+				totalCustomersCount = 0;
+				updateStatisticsUI();
+				if (statsTextArea != null) {
+					statsTextArea.clear();
+				}
+
+				controller.startSimulation();
+
+				startButton.setText("Stop Simulation");
+				startButton.setStyle("-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-weight: bold;");
+
+				pauseButton.setDisable(false);
+			} else {
+				// --- STOP SIMULATION ---
+				controller.stopSimulation();
+				resetControlButtons();
+			}
+		});
+
+		pauseButton = new Button("Pause");
+		pauseButton.setDisable(true);
+		pauseButton.setStyle("-fx-background-color: #ff9800; -fx-text-fill: white; -fx-font-weight: bold;");
+		pauseButton.setMaxWidth(Double.MAX_VALUE);
+		pauseButton.setOnAction(e -> {
+			controller.togglePause();
+			if ("Pause".equals(pauseButton.getText())) {
+				pauseButton.setText("Resume");
+				pauseButton.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;");
+			} else {
+				pauseButton.setText("Pause");
+				pauseButton.setStyle("-fx-background-color: #ff9800; -fx-text-fill: white; -fx-font-weight: bold;");
+			}
+		});
+
+		slowButton = new Button("Slow Down");
+		slowButton.setOnAction(e -> controller.decreaseSpeed());
+
+		speedUpButton = new Button("Speed Up");
+		speedUpButton.setOnAction(e -> controller.increaseSpeed());
+
+		HBox speedBox = new HBox(5, slowButton, speedUpButton);
+		HBox.setHgrow(slowButton, Priority.ALWAYS);
+		HBox.setHgrow(speedUpButton, Priority.ALWAYS);
+		slowButton.setMaxWidth(Double.MAX_VALUE);
+		speedUpButton.setMaxWidth(Double.MAX_VALUE);
+
+		HBox runBox = new HBox(5, startButton, pauseButton);
+		HBox.setHgrow(startButton, Priority.ALWAYS);
+		HBox.setHgrow(pauseButton, Priority.ALWAYS);
+
+		VBox execBox = new VBox(6,
+				execHeader,
+				createLabeledControl("Simulation Time:", time),
+				createLabeledControl("Delay (ms):", delay),
+				runBox,
+				speedBox
+		);
+
+		panel.getChildren().addAll(stationBox, new Separator(), customerBox, new Separator(), execBox);
+
+		ScrollPane scrollPane = new ScrollPane(panel);
+		scrollPane.setFitToWidth(true);
+		scrollPane.setFitToHeight(true);
+		return new VBox(scrollPane);
 	}
 
+	// -------------------------------------------------------------------------
+	// RIGHT STATISTICS SIDEBAR LAYOUT
+	// -------------------------------------------------------------------------
+	private VBox createStatsSidebar() {
+		VBox statsBox = new VBox(10);
+		statsBox.setPrefWidth(220);
+		statsBox.setPadding(new Insets(5));
+
+		Label statsHeader = createSectionHeader("--- STATISTICS ---");
+		customerCountLabel = new Label("Customers inside: 0");
+		customerCountLabel.setFont(Font.font("Tahoma", FontWeight.NORMAL, 14));
+		customerCountLabel.setStyle("-fx-text-fill: #0000ff;");
+
+		totalTimeLabel = new Label("Total execution time: -");
+		totalTimeLabel.setFont(Font.font("Tahoma", FontWeight.NORMAL, 14));
+		totalTimeLabel.setStyle("-fx-text-fill: #008000;");
+
+		statsTextArea = new TextArea();
+		statsTextArea.setEditable(false);
+		statsTextArea.setWrapText(true);
+		statsTextArea.setPrefHeight(450);
+
+		statsBox.getChildren().addAll(statsHeader, customerCountLabel, totalTimeLabel, statsTextArea);
+		return statsBox;
+	}
+
+	// -------------------------------------------------------------------------
+	// HELPER CREATORS
+	// -------------------------------------------------------------------------
+	private Label createSectionHeader(String title) {
+		Label label = new Label(title);
+		label.setFont(Font.font("Tahoma", FontWeight.BOLD, 13));
+		return label;
+	}
+
+	private VBox createLabeledControl(String labelText, Control control) {
+		Label label = new Label(labelText);
+		label.setFont(Font.font("Tahoma", FontWeight.NORMAL, 11));
+		return new VBox(2, label, control);
+	}
+
+	private Slider createSnapSlider(double min, double max, double value) {
+		Slider slider = new Slider(min, max, value);
+		slider.setMajorTickUnit(1);
+		slider.setMinorTickCount(0);
+		slider.setSnapToTicks(true);
+		slider.setShowTickMarks(true);
+		slider.setShowTickLabels(true);
+		return slider;
+	}
+
+	private Slider createMixSlider(double defaultValue) {
+		Slider slider = new Slider(0, 100, defaultValue);
+		slider.setMajorTickUnit(50);
+		slider.setShowTickMarks(true);
+		return slider;
+	}
+
+	// -------------------------------------------------------------------------
+	// ISimulatorUI INTERFACE IMPLEMENTATION
+	// -------------------------------------------------------------------------
 	@Override
-	public double getTime(){
+	public double getTime() {
 		return Double.parseDouble(time.getText());
 	}
 
 	@Override
-	public long getDelay(){
+	public long getDelay() {
 		return Long.parseLong(delay.getText());
+	}
+
+	@Override
+	public double getDrinkProbability() {
+		return drinkProbabilitySlider.getValue() / 100.0;
+	}
+
+	@Override
+	public int getOven1Capacity() {
+		return (int) oven1Slider.getValue();
+	}
+
+	@Override
+	public int getOven2Capacity() {
+		return (int) oven2Slider.getValue();
+	}
+
+	@Override
+	public int getTableCapacity() {
+		return (int) tableSlider.getValue();
+	}
+
+	@Override
+	public int getCourierCapacity() {
+		return (int) courierSlider.getValue();
+	}
+
+	@Override
+	public String getArrivalPace() {
+		return paceChoiceBox.getValue();
+	}
+
+	@Override
+	public double getDineInWeight() {
+		return dineInMixSlider.getValue();
+	}
+
+	@Override
+	public double getTakeawayWeight() {
+		return takeawayMixSlider.getValue();
+	}
+
+	@Override
+	public double getOnlineWeight() {
+		return onlineMixSlider.getValue();
+	}
+
+	@Override
+	public IVisualisation getVisualisation() {
+		return display;
+	}
+
+	private void resetControlButtons() {
+		startButton.setText("Start Simulation");
+		startButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;");
+
+		pauseButton.setDisable(true);
+		pauseButton.setText("Pause");
+		pauseButton.setStyle("-fx-background-color: #ff9800; -fx-text-fill: white; -fx-font-weight: bold;");
 	}
 
 	@Override
@@ -176,19 +359,8 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		DecimalFormat formatter = new DecimalFormat("#0.00");
 		Platform.runLater(() -> {
 			this.totalTimeLabel.setText("Total execution time: " + formatter.format(time));
-			this.startButton.setDisable(false); // Включаем кнопку обратно по окончании
+			resetControlButtons();
 		});
-	}
-
-	@Override
-	public double getDrinkProbability() {
-		// Converts slider value (0, 50, 100) to probability (0.0, 0.5, 1.0)
-		return drinkProbabilitySlider.getValue() / 100.0;
-	}
-
-	@Override
-	public IVisualisation getVisualisation() {
-		return display;
 	}
 
 	public void incrementCustomerCount() {
@@ -201,7 +373,10 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		updateStatisticsUI();
 	}
 
-	// Used for outporting customer arrives and departures
+	private void updateStatisticsUI() {
+		customerCountLabel.setText("Customers inside: " + totalCustomersCount);
+	}
+
 	public void logEvent(String text) {
 		if (statsTextArea != null) {
 			statsTextArea.appendText(text + "\n");

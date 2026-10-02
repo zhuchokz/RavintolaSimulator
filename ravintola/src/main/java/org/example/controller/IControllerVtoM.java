@@ -3,6 +3,8 @@ package org.example.controller;
 /* interface for the UI */
 public interface IControllerVtoM {
 		public void startSimulation();
+		public void stopSimulation();
 		public void increaseSpeed();
 		public void decreaseSpeed();
+		public void togglePause();
 }

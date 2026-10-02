@@ -15,6 +15,9 @@ public class Customer {
 
 	private boolean wantsDrink;
 	private static volatile double drinkProbability = 0.5;
+	private static volatile double dineInWeight = 40.0;
+	private static volatile double takeawayWeight = 40.0;
+	private static volatile double onlineWeight = 20.0;
 
 	private static int i = 1;
 	private static double totalStayTime = 0;
@@ -27,8 +30,25 @@ public class Customer {
 		totalStayTime = 0;
 	}
 
+	private static CustomerType generateRandomType() {
+		double totalWeight = dineInWeight + takeawayWeight + onlineWeight;
+
+		// Fallback if all sliders are at 0
+		if (totalWeight <= 0) return CustomerType.DINEIN;
+
+		double roll = random.nextDouble() * totalWeight;
+
+		if (roll < dineInWeight) {
+			return CustomerType.DINEIN;
+		} else if (roll < dineInWeight + takeawayWeight) {
+			return CustomerType.TAKEAWAY;
+		} else {
+			return CustomerType.ONLINE;
+		}
+	}
+
 	public Customer() {
-		this(CustomerType.values()[random.nextInt(CustomerType.values().length)]);
+		this(generateRandomType());
 	}
 	
 	public Customer(CustomerType type) {
@@ -90,6 +110,12 @@ public class Customer {
 			return drinkProbability;
 		}
 		return 0.0;
+	}
+
+	public static void setCustomerWeights(double dineIn, double takeaway, double online) {
+		dineInWeight = dineIn;
+		takeawayWeight = takeaway;
+		onlineWeight = online;
 	}
 	
 	public void reportResults() {

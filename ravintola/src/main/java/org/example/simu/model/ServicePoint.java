@@ -103,6 +103,8 @@ public class ServicePoint {
 
 	public int getTotalServed() { return totalServed; }
 
+	public void setCapacity(int capacity) { this.capacity = capacity; }
+
 	public int getCapacity() { return capacity; }
 
 	public int getMaxQueueSize() { return maxQueueSize; }

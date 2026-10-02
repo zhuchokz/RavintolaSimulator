@@ -21,13 +21,35 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 	@Override
 	public void startSimulation() {
 		Customer.setDrinkProbability(ui.getDrinkProbability());
+		Customer.setCustomerWeights(
+				ui.getDineInWeight(),
+				ui.getTakeawayWeight(),
+				ui.getOnlineWeight()
+		);
 
-		engine = new MyEngine(this); // new Engine thread is created for every simulation
+		MyEngine myEngine = new MyEngine(this); // new Engine thread is created for every simulation
+		engine = myEngine;
+
 		engine.setSimulationTime(ui.getTime());
 		engine.setDelay(ui.getDelay());
+
+		myEngine.setStationCapacities(
+				ui.getOven1Capacity(),
+				ui.getOven2Capacity(),
+				ui.getTableCapacity(),
+				ui.getCourierCapacity()
+		);
+		myEngine.setArrivalPace(ui.getArrivalPace());
+
 		ui.getVisualisation().clearDisplay();
 		((Thread) engine).start();
 		//((Thread)engine).run(); // Never like this, why?
+	}
+
+	public void togglePause() {
+		if (engine instanceof MyEngine) {
+			((MyEngine) engine).togglePause();
+		}
 	}
 
 	/* Simulation results passing to the UI
@@ -74,6 +96,13 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		// speeding up the movement of the balls on the canvas
 		if (ui.getVisualisation() instanceof PizzaVisualisation) {
 			((PizzaVisualisation) ui.getVisualisation()).adjustAnimationSpeed(1.20);
+		}
+	}
+
+	@Override
+	public void stopSimulation() {
+		if (engine instanceof MyEngine) {
+			((MyEngine) engine).stopSimulation();
 		}
 	}
 

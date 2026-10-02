@@ -11,4 +11,16 @@ public interface ISimulatorUI {
 	
 	// Controller requires
 	public IVisualisation getVisualisation();
+
+	// Station Capacities
+	public int getOven1Capacity();
+	public int getOven2Capacity();
+	public int getTableCapacity();
+	public int getCourierCapacity();
+
+	// Customer & Pace settings
+	public String getArrivalPace();
+	public double getDineInWeight();
+	public double getTakeawayWeight();
+	public double getOnlineWeight();
 }
