@@ -27,59 +27,31 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
     private Image blueCustomerImage;
     private Image greenCustomerImage;
 
-    private static final int[][] PATH_COMMON_WALK = {
-            {90, 200, 0},       // Arrival
-            {230, 200, 5000},   // Order Queue
-            {380, 200, 0},      // Ordering
-            {500, 200, 5000},   // Payment Queue
-            {650, 200, 0},      // Payment
-            {780, 200, 5000}    // Oven Queue
-    };
+    private static final int[] POS_ARRIVAL = {90, 200};
+    private static final int[] POS_ONLINE_SPAWN = {90, 200};
+    private static final int[] POS_ONLINE_FLY = {90, 90};
+    private static final int[] POS_ONLINE_BEFORE_OVEN = {780, 90};
 
-    private static final int[][] PATH_COMMON_ONLINE = {
-            {90, 200, 0},       // Spawn on Arrival
-            {90, 90, 0},        // Ascending to the upper orange dashed line
-            {780, 90, 0},       // Flying right above the queues and counters
-            {780, 200, 5000}    // Descending straight down into Oven Queue
-    };
+    private static final int[] POS_ORDER_QUEUE = {230, 200};
+    private static final int[] POS_PAYMENT_QUEUE = {500, 200};
+    private static final int[] POS_OVEN_QUEUE = {780, 200};
 
-    // --- УНИКАЛЬНЫЕ ОДИНОЧНЫЕ ТОЧКИ ПЕЧЕЙ ---
-    private static final int[][] START_OVEN1 = {{915, 140, 0}}; // Oven 1  Takeaway/Online
-    private static final int[][] START_OVEN2 = {{915, 260, 0}}; // Oven 2 Takeaway/Online
+    private static final int[] POS_OVEN1 = {915, 140};
+    private static final int[] POS_OVEN2 = {915, 260};
 
-    private static final int[][] START_DINEIN_OVEN1 = {{915, 140, 0}}; // Oven 1  Dine-in
-    private static final int[][] START_DINEIN_OVEN2 = {{915, 260, 0}}; // Oven 2  Dine-in
+    private static final int[] POS_PICKUP = {1050, 260};
+    private static final int[] POS_COURIER = {1080, 140};
 
-    private static final int[][] END_TAKEAWAY_COMMON = {
-            {1050, 260, 0},  // Pickup
-            {1180, 260, 0}   // Exit Circle
-    };
+    private static final int[] POS_DINEIN_DESCEND = {1050, 400};
+    private static final int[] POS_TABLE = {630, 400};
+    private static final int[] POS_DRINK = {630, 330};
 
-    private static final int[][] END_ONLINE_COMMON = {
-            {1080, 140, 0},  // Courier
-            {1180, 140, 0}   // Delivered Circle
-    };
+    private static final int[] POS_DINEIN_EXIT_DOWN = {630, 450};
+    private static final int[] POS_EXIT_ARROW = {1180, 450};
+    private static final int[] POS_EXIT_CIRCLE = {1180, 260};
 
-    private static final int[][] END_DINEIN_WITH_DRINK = {
-            {1050, 260, 0},     // Pickup
-            {1050, 400, 0},     // Vertical move down along the dashed line
-            {630, 400, 0},   // Table area
-            {630, 330, 0},      // Drink kiosk
-            {630, 400, 5000},   // Table area
-            {630, 450, 0},      // Moving straight DOWN from Table area
-            {1180, 450, 0},     // Moving right along the bottom arrow under the Exit circle
-            {1180, 260, 0}      // Moving straight up into the green Exit circle
-    };
-
-    // without drink
-    private static final int[][] END_DINEIN_NO_DRINK = {
-            {1050, 260, 0},     // Pickup
-            {1050, 400, 0},     // Vertical move down along the dashed line
-            {630, 400, 5000},   // Table area
-            {630, 450, 0},      // Moving straight DOWN from Table area
-            {1180, 450, 0},     // Moving right along the bottom arrow under the Exit circle
-            {1180, 260, 0}      // Moving straight up into the green Exit circle
-    };
+    private static final int[] POS_TAKEAWAY_EXIT = {1180, 260};
+    private static final int[] POS_ONLINE_EXIT = {1180, 140};
 
     public PizzaVisualisation(int w, int h) {
         super(w, h);
@@ -120,17 +92,16 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         return null;
     }
 
-    private int[][] combinePaths(int[][] path1, int[][] path2, int[][] path3) {
-        int[][] result = new int[path1.length + path2.length + path3.length][3];
-        System.arraycopy(path1, 0, result, 0, path1.length);
-        System.arraycopy(path2, 0, result, path1.length, path2.length);
-        System.arraycopy(path3, 0, result, path1.length + path2.length, path3.length);
-        return result;
-    }
-
     @Override
     public void resetVisuals() {
         Platform.runLater(() -> customers.clear());
+    }
+
+    @Override
+    public void adjustAnimationSpeed(double speedMultiplier) {
+        Platform.runLater(() -> {
+            this.currentBallSpeed = 3.5 * speedMultiplier;
+        });
     }
 
     @Override
@@ -147,74 +118,108 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
     public void visualiseCustomer(int id, CustomerType type, String action) {
         Platform.runLater(() -> {
             if ("ARRIVED".equals(action)) {
-                Image img = blueCustomerImage;
-                Color col = Color.BLUE;
-                int[][] chosenPath;
+                int[] startPos = (type == CustomerType.ONLINE) ? POS_ONLINE_SPAWN : POS_ARRIVAL;
+                Image img = (type == CustomerType.ONLINE) ? greenCustomerImage :
+                        (type == CustomerType.TAKEAWAY) ? redCustomerImage : blueCustomerImage;
+                Color col = (type == CustomerType.ONLINE) ? Color.DARKGREEN :
+                        (type == CustomerType.TAKEAWAY) ? Color.RED : Color.BLUE;
 
-                boolean useOven1 = random.nextBoolean();
-
-                if (type == CustomerType.ONLINE) {
-                    img = greenCustomerImage;
-                    col = Color.DARKGREEN;
-                    chosenPath = useOven1
-                            ? combinePaths(PATH_COMMON_ONLINE, START_OVEN1, END_ONLINE_COMMON)
-                            : combinePaths(PATH_COMMON_ONLINE, START_OVEN2, END_ONLINE_COMMON);
-                } else if (type == CustomerType.TAKEAWAY) {
-                    img = redCustomerImage;
-                    col = Color.RED;
-                    chosenPath = useOven1
-                            ? combinePaths(PATH_COMMON_WALK, START_OVEN1, END_TAKEAWAY_COMMON)
-                            : combinePaths(PATH_COMMON_WALK, START_OVEN2, END_TAKEAWAY_COMMON);
-                } else {
-                    // DINEIN
-                    int[][] ovenPath = useOven1 ? START_DINEIN_OVEN1 : START_DINEIN_OVEN2;
-                    boolean takeDrink = random.nextBoolean();
-                    int[][] drinkPath = takeDrink ? END_DINEIN_WITH_DRINK : END_DINEIN_NO_DRINK;
-
-                    chosenPath = combinePaths(PATH_COMMON_WALK, ovenPath, drinkPath);
-                }
-
-                CustomerSprite newSprite = new CustomerSprite(chosenPath, img, col);
-                customers.put(id, newSprite);
+                CustomerSprite sprite = new CustomerSprite(startPos, img, col);
+                customers.put(id, sprite);
+                return;
             }
 
-            if ("FINISHED".equals(action)) {
-                CustomerSprite sprite = customers.get(id);
-                if (sprite != null) {
+            CustomerSprite sprite = customers.get(id);
+            if (sprite == null) return;
+
+            switch (action) {
+                case "ORDER":
+                    sprite.addTarget(POS_ORDER_QUEUE);
+                    break;
+                case "PAY":
+                    sprite.addTarget(POS_PAYMENT_QUEUE);
+                    break;
+                case "OVEN1":
+                    if (type == CustomerType.ONLINE) {
+                        sprite.addTarget(POS_ONLINE_FLY);
+                        sprite.addTarget(POS_ONLINE_BEFORE_OVEN);
+                    }
+                    sprite.addTarget(POS_OVEN_QUEUE);
+                    sprite.assignedOven = 1;
+                    break;
+                case "OVEN2":
+                    if (type == CustomerType.ONLINE) {
+                        sprite.addTarget(POS_ONLINE_FLY);
+                        sprite.addTarget(POS_ONLINE_BEFORE_OVEN);
+                    }
+                    sprite.addTarget(POS_OVEN_QUEUE);
+                    sprite.assignedOven = 2;
+                    break;
+                case "COURIER":
+                    sprite.addTarget(sprite.assignedOven == 1 ? POS_OVEN1 : POS_OVEN2);
+                    sprite.addTarget(POS_COURIER);
+                    break;
+                case "PICKUP":
+                    sprite.addTarget(sprite.assignedOven == 1 ? POS_OVEN1 : POS_OVEN2);
+                    sprite.addTarget(POS_PICKUP);
+                    break;
+                case "DRINK":
+                    sprite.addTarget(POS_DINEIN_DESCEND);
+                    sprite.addTarget(POS_TABLE);
+                    sprite.addTarget(POS_DRINK);
+                    break;
+
+                case "TABLE":
+                    if (sprite.x == POS_DRINK[0] && sprite.y == POS_DRINK[1]) {
+                        sprite.addTarget(POS_TABLE);
+                    } else {
+
+                        sprite.addTarget(POS_DINEIN_DESCEND);
+                        sprite.addTarget(POS_TABLE);
+                    }
+                    break;
+                case "FINISHED":
                     sprite.isLeaving = true;
-                }
+                    if (type == CustomerType.ONLINE) {
+                        sprite.addTarget(POS_ONLINE_EXIT);
+                    } else if (type == CustomerType.TAKEAWAY) {
+                        sprite.addTarget(POS_TAKEAWAY_EXIT);
+                    } else {
+                        sprite.addTarget(POS_DINEIN_EXIT_DOWN);
+                        sprite.addTarget(POS_EXIT_ARROW);
+                        sprite.addTarget(POS_EXIT_CIRCLE);
+                    }
+                    break;
             }
         });
     }
+
     private void updateCustomerPositions() {
         for (Integer id : customers.keySet()) {
             CustomerSprite c = customers.get(id);
             if (c == null) continue;
 
-            // Если клиент ждет в очереди — уменьшаем его таймер и никуда не двигаем
-            if (c.isWaiting()) {
-                continue;
-            }
-
-            if (c.currentStage < c.path.length) {
-                int[] target = c.path[c.currentStage];
+// If there are tasks in the movement queue, move toward the current target.
+            if (!c.targetPoints.isEmpty()) {
+                int[] target = c.targetPoints.peek();
                 double dx = target[0] - c.x;
                 double dy = target[1] - c.y;
                 double distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance < 4) {
-                    // Проверяем наличие задержки на текущей точке
-                    int delay = target[2];
-                    if (delay > 0) {
-                        c.startWaiting(delay);
-                    }
-                    c.currentStage++;
+                    c.x = target[0];
+                    c.y = target[1];
+                    c.targetPoints.poll(); // Point reached, remove it from the task queue
                 } else {
                     c.x += (dx / distance) * currentBallSpeed;
                     c.y += (dy / distance) * currentBallSpeed;
                 }
             } else {
-                customers.remove(id);
+                // If there are no more targets and the engine has issued the FINISHED command, remove from the screen
+
+                if (c.isLeaving) {
+                    customers.remove(id);
+                }
             }
         }
     }
@@ -249,49 +254,21 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         animationThread.setDaemon(true);
         animationThread.start();
     }
-    @Override
-    public void adjustAnimationSpeed(double speedMultiplier) {
-        Platform.runLater(() -> {
-            // Базовая скорость 3.5 умножается на входящий коэффициент (например, 1.0, 2.0 или 0.5)
-            this.currentBallSpeed = 3.5 * speedMultiplier;
-        });
-    }
-
     private static class CustomerSprite {
         double x, y;
-        int currentStage = 1;
-        int[][] path;
+        java.util.Queue<int[]> targetPoints = new java.util.LinkedList<>();
         Image characterImage;
         Color color;
         boolean isLeaving = false;
-
-        long waitTimeLeft = 0;
-        long lastUpdateTime = 0;
-
-        CustomerSprite(int[][] path, Image image, Color color) {
-            this.path = path;
+        int assignedOven = 1; // Variable for synchronizing the furnace with the engine
+        CustomerSprite(int[] startPos, Image image, Color color) {
             this.characterImage = image;
             this.color = color;
-            this.x = path[0][0];
-            this.y = path[0][1];
+            this.x = startPos[0];
+            this.y = startPos[1];
         }
-        boolean isWaiting() {
-            if (waitTimeLeft > 0) {
-                long now = System.currentTimeMillis();
-                long elapsed = now - lastUpdateTime;
-                lastUpdateTime = now;
-                waitTimeLeft -= elapsed;
-                if (waitTimeLeft <= 0) {
-                    waitTimeLeft = 0;
-                    return false;
-                }
-                return true;
-            }
-            return false;
-        }
-        void startWaiting(long ms) {
-            this.waitTimeLeft = ms;
-            this.lastUpdateTime = System.currentTimeMillis();
+        void addTarget(int[] point) {
+            targetPoints.add(point);
         }
     }
 }

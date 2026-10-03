@@ -31,7 +31,13 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		engine = myEngine;
 
 		engine.setSimulationTime(ui.getTime());
-		engine.setDelay(ui.getDelay());
+
+
+		long initialDelay = ui.getDelay();
+		if (initialDelay < 100) {
+			initialDelay = 5000;
+		}
+		engine.setDelay(initialDelay);
 
 		myEngine.setStationCapacities(
 				ui.getOven1Capacity(),
@@ -41,10 +47,14 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		);
 		myEngine.setArrivalPace(ui.getArrivalPace());
 
+		if (ui.getVisualisation() instanceof PizzaVisualisation) {
+			((PizzaVisualisation) ui.getVisualisation()).adjustAnimationSpeed(1.0);
+		}
+
 		ui.getVisualisation().clearDisplay();
 		((Thread) engine).start();
-		//((Thread)engine).run(); // Never like this, why?
 	}
+
 
 	public void togglePause() {
 		if (engine instanceof MyEngine) {
@@ -80,20 +90,20 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 	}
 
 	@Override
-	public void decreaseSpeed() { // Slowdown
-		engine.setDelay((long)(engine.getDelay() * 1.10)); //Slowing down the engine logic
+	public void decreaseSpeed() {
+		engine.setDelay((long)(engine.getDelay() * 1.10));
 
-		// slow down the movement of the balls on the canvas.
 		if (ui.getVisualisation() instanceof PizzaVisualisation) {
 			((PizzaVisualisation) ui.getVisualisation()).adjustAnimationSpeed(0.85);
 		}
 	}
 
 	@Override
-	public void increaseSpeed() { // speed up
-		engine.setDelay((long)(engine.getDelay() * 0.90)); //speed up the engine logic
+	public void increaseSpeed() {
+		long newDelay = (long)(engine.getDelay() * 0.90);
+		if (newDelay < 10) newDelay = 10;
+		engine.setDelay(newDelay);
 
-		// speeding up the movement of the balls on the canvas
 		if (ui.getVisualisation() instanceof PizzaVisualisation) {
 			((PizzaVisualisation) ui.getVisualisation()).adjustAnimationSpeed(1.20);
 		}
