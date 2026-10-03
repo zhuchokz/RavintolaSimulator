@@ -8,8 +8,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,97 +27,65 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
     private Image blueCustomerImage;
     private Image greenCustomerImage;
 
-    private static final int[][] PATH_TAKEAWAY_OVEN1 = {
-            {55, 125},   // Arrival
-            {140, 125},  // Order Queue
-            {230, 125},  // Ordering
-            {325, 125},  // Payment Queue
-            {415, 125},  // Payment
-            {510, 125},  // Oven Queue
-            {595, 85},   // Oven 1
-            {665, 160},  // Pickup
-            {745, 160}   // Exit Circle
+    private static final int[][] PATH_COMMON_WALK = {
+            {90, 200, 0},       // Arrival
+            {230, 200, 5000},   // Order Queue
+            {380, 200, 0},      // Ordering
+            {500, 200, 5000},   // Payment Queue
+            {650, 200, 0},      // Payment
+            {780, 200, 5000}    // Oven Queue
     };
 
-    // 2. Takeaway via Oven 2
-    private static final int[][] PATH_TAKEAWAY_OVEN2 = {
-            {55, 125},   // Arrival
-            {140, 125},  // Order Queue
-            {230, 125},  // Ordering
-            {325, 125},  // Payment Queue
-            {415, 125},  // Payment
-            {510, 125},  // Oven Queue
-            {595, 160},  // Oven 2
-            {665, 160},  // Pickup
-            {745, 160}   // Exit Circle
+    private static final int[][] PATH_COMMON_ONLINE = {
+            {90, 200, 0},       // Spawn on Arrival
+            {90, 90, 0},        // Ascending to the upper orange dashed line
+            {780, 90, 0},       // Flying right above the queues and counters
+            {780, 200, 5000}    // Descending straight down into Oven Queue
     };
 
+    // --- УНИКАЛЬНЫЕ ОДИНОЧНЫЕ ТОЧКИ ПЕЧЕЙ ---
+    private static final int[][] START_OVEN1 = {{915, 140, 0}}; // Oven 1  Takeaway/Online
+    private static final int[][] START_OVEN2 = {{915, 260, 0}}; // Oven 2 Takeaway/Online
 
-    private static final int[][] PATH_DINEIN_OVEN1 = {
-            {55, 125},   // Arrival
-            {140, 125},  // Order Queue
-            {230, 125},  // Ordering
-            {325, 125},  // Payment Queue
-            {415, 125},  // Payment
-            {510, 125},  // Oven Queue
-            {595, 75},   // Oven 1
-            {670, 160},  // Pickup
-            {670, 260},  // Vertical move down along the dashed line
-            {595, 260},  // Drink kiosk
-            {400, 260},  //  Table area
-            {400, 290},  // Moving straight DOWN from Table area
-            {745, 290},  // Moving right along the bottom arrow under the Exit circle
-            {745, 230}   // Moving straight up into the green Exit circle
+    private static final int[][] START_DINEIN_OVEN1 = {{915, 140, 0}}; // Oven 1  Dine-in
+    private static final int[][] START_DINEIN_OVEN2 = {{915, 260, 0}}; // Oven 2  Dine-in
+
+    private static final int[][] END_TAKEAWAY_COMMON = {
+            {1050, 260, 0},  // Pickup
+            {1180, 260, 0}   // Exit Circle
     };
 
-
-    // 4. Dine-in via Oven 2
-    private static final int[][] PATH_DINEIN_OVEN2 = {
-            {55, 125},   // Arrival
-            {140, 125},  // Order Queue
-            {230, 125},  // Ordering
-            {325, 125},  // Payment Queue
-            {415, 125},  // Payment
-            {510, 125},  // Oven Queue
-            {595, 160},  // Oven 2
-            {670, 160},  // Pickup
-            {670, 260},  // Vertical move down along the dashed line
-            {595, 260},  // Entering right into the Drink kiosk
-            {400, 260},  // Moving left into the Table area
-            {400, 290},  // Moving straight DOWN from Table area
-            {745, 290},  // Moving right along the bottom arrow under the Exit circle
-            {745, 230}   // Moving straight up into the green Exit circle
+    private static final int[][] END_ONLINE_COMMON = {
+            {1080, 140, 0},  // Courier
+            {1180, 140, 0}   // Delivered Circle
     };
 
-
-    // 5. Online via Oven 1
-    private static final int[][] PATH_ONLINE_OVEN1 = {
-            {55, 140},   // Spawn on Arrival
-            {55, 40},    // Ascending to the upper orange dashed line
-            {510, 40},   // Flying right above the queues and counters
-            {510, 140},  // Descending straight down into Oven Queue
-            {595, 85},   // Oven 1
-            {665, 85},   // Courier
-            {745, 85}    // Delivered Circle
+    private static final int[][] END_DINEIN_WITH_DRINK = {
+            {1050, 260, 0},     // Pickup
+            {1050, 400, 0},     // Vertical move down along the dashed line
+            {630, 400, 0},   // Table area
+            {630, 330, 0},      // Drink kiosk
+            {630, 400, 5000},   // Table area
+            {630, 450, 0},      // Moving straight DOWN from Table area
+            {1180, 450, 0},     // Moving right along the bottom arrow under the Exit circle
+            {1180, 260, 0}      // Moving straight up into the green Exit circle
     };
 
-
-    // 6. Online via Oven 2
-    private static final int[][] PATH_ONLINE_OVEN2 = {
-            {55, 140},   // Spawn on Arrival
-            {55, 40},    // Ascending to the upper orange dashed line
-            {510, 40},   // Flying right above the counters
-            {510, 140},  // Descending straight down into Oven Queue
-            {595, 160},  // Oven 2
-            {665, 85},   // Courier
-            {745, 85}    // Delivered Circle
+    // without drink
+    private static final int[][] END_DINEIN_NO_DRINK = {
+            {1050, 260, 0},     // Pickup
+            {1050, 400, 0},     // Vertical move down along the dashed line
+            {630, 400, 5000},   // Table area
+            {630, 450, 0},      // Moving straight DOWN from Table area
+            {1180, 450, 0},     // Moving right along the bottom arrow under the Exit circle
+            {1180, 260, 0}      // Moving straight up into the green Exit circle
     };
 
     public PizzaVisualisation(int w, int h) {
         super(w, h);
         gc = this.getGraphicsContext2D();
         try {
-            URL imageUrl = PizzaVisualisation.class.getResource("/pizzeria2.png");
+            URL imageUrl = PizzaVisualisation.class.getResource("/pizzeria3.png");
             if (imageUrl != null) {
                 backgroundImage = new Image(imageUrl.toExternalForm());
                 System.out.println("The pizzeria background has been successfully loaded.");
@@ -154,6 +120,14 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         return null;
     }
 
+    private int[][] combinePaths(int[][] path1, int[][] path2, int[][] path3) {
+        int[][] result = new int[path1.length + path2.length + path3.length][3];
+        System.arraycopy(path1, 0, result, 0, path1.length);
+        System.arraycopy(path2, 0, result, path1.length, path2.length);
+        System.arraycopy(path3, 0, result, path1.length + path2.length, path3.length);
+        return result;
+    }
+
     @Override
     public void resetVisuals() {
         Platform.runLater(() -> customers.clear());
@@ -177,27 +151,33 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
                 Color col = Color.BLUE;
                 int[][] chosenPath;
 
-                // Select a random oven for this client (Oven 1 or Oven 2)
                 boolean useOven1 = random.nextBoolean();
 
                 if (type == CustomerType.ONLINE) {
                     img = greenCustomerImage;
                     col = Color.DARKGREEN;
-                    chosenPath = useOven1 ? PATH_ONLINE_OVEN1 : PATH_ONLINE_OVEN2;
+                    chosenPath = useOven1
+                            ? combinePaths(PATH_COMMON_ONLINE, START_OVEN1, END_ONLINE_COMMON)
+                            : combinePaths(PATH_COMMON_ONLINE, START_OVEN2, END_ONLINE_COMMON);
                 } else if (type == CustomerType.TAKEAWAY) {
                     img = redCustomerImage;
                     col = Color.RED;
-                    chosenPath = useOven1 ? PATH_TAKEAWAY_OVEN1 : PATH_TAKEAWAY_OVEN2;
+                    chosenPath = useOven1
+                            ? combinePaths(PATH_COMMON_WALK, START_OVEN1, END_TAKEAWAY_COMMON)
+                            : combinePaths(PATH_COMMON_WALK, START_OVEN2, END_TAKEAWAY_COMMON);
                 } else {
-                    chosenPath = useOven1 ? PATH_DINEIN_OVEN1 : PATH_DINEIN_OVEN2;
+                    // DINEIN
+                    int[][] ovenPath = useOven1 ? START_DINEIN_OVEN1 : START_DINEIN_OVEN2;
+                    boolean takeDrink = random.nextBoolean();
+                    int[][] drinkPath = takeDrink ? END_DINEIN_WITH_DRINK : END_DINEIN_NO_DRINK;
+
+                    chosenPath = combinePaths(PATH_COMMON_WALK, ovenPath, drinkPath);
                 }
 
-                // Create a sprite and immediately pass it the entire prepared PATH from the top of the file
                 CustomerSprite newSprite = new CustomerSprite(chosenPath, img, col);
                 customers.put(id, newSprite);
             }
 
-            // If the engine sends FINISHED for Takeaway or Online, confirm the removal upon completion of the route.
             if ("FINISHED".equals(action)) {
                 CustomerSprite sprite = customers.get(id);
                 if (sprite != null) {
@@ -206,11 +186,15 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
             }
         });
     }
-
     private void updateCustomerPositions() {
         for (Integer id : customers.keySet()) {
             CustomerSprite c = customers.get(id);
             if (c == null) continue;
+
+            // Если клиент ждет в очереди — уменьшаем его таймер и никуда не двигаем
+            if (c.isWaiting()) {
+                continue;
+            }
 
             if (c.currentStage < c.path.length) {
                 int[] target = c.path[c.currentStage];
@@ -219,13 +203,17 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
                 double distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance < 4) {
-                    c.currentStage++; // Move to the next point in the PATH array
+                    // Проверяем наличие задержки на текущей точке
+                    int delay = target[2];
+                    if (delay > 0) {
+                        c.startWaiting(delay);
+                    }
+                    c.currentStage++;
                 } else {
                     c.x += (dx / distance) * currentBallSpeed;
                     c.y += (dy / distance) * currentBallSpeed;
                 }
             } else {
-                // If the ball has passed all points in the PATH array, remove it from the canvas.
                 customers.remove(id);
             }
         }
@@ -261,11 +249,12 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         animationThread.setDaemon(true);
         animationThread.start();
     }
-
-    public void adjustAnimationSpeed(double factor) {
-        this.currentBallSpeed *= factor;
-        if (this.currentBallSpeed > 15.0) this.currentBallSpeed = 15.0;
-        if (this.currentBallSpeed < 0.5) this.currentBallSpeed = 0.5;
+    @Override
+    public void adjustAnimationSpeed(double speedMultiplier) {
+        Platform.runLater(() -> {
+            // Базовая скорость 3.5 умножается на входящий коэффициент (например, 1.0, 2.0 или 0.5)
+            this.currentBallSpeed = 3.5 * speedMultiplier;
+        });
     }
 
     private static class CustomerSprite {
@@ -276,12 +265,33 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         Color color;
         boolean isLeaving = false;
 
+        long waitTimeLeft = 0;
+        long lastUpdateTime = 0;
+
         CustomerSprite(int[][] path, Image image, Color color) {
             this.path = path;
             this.characterImage = image;
             this.color = color;
             this.x = path[0][0];
             this.y = path[0][1];
+        }
+        boolean isWaiting() {
+            if (waitTimeLeft > 0) {
+                long now = System.currentTimeMillis();
+                long elapsed = now - lastUpdateTime;
+                lastUpdateTime = now;
+                waitTimeLeft -= elapsed;
+                if (waitTimeLeft <= 0) {
+                    waitTimeLeft = 0;
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        }
+        void startWaiting(long ms) {
+            this.waitTimeLeft = ms;
+            this.lastUpdateTime = System.currentTimeMillis();
         }
     }
 }
