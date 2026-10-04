@@ -20,6 +20,7 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 	/* Engine control: */
 	@Override
 	public void startSimulation() {
+		Customer.reset();
 		Customer.setDrinkProbability(ui.getDrinkProbability());
 		Customer.setCustomerWeights(
 				ui.getDineInWeight(),

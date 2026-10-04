@@ -27,20 +27,20 @@ public class MyEngine extends Engine {
     public MyEngine(IControllerMtoV controller) {
         super(controller);
 
-        orderPoint = new ServicePoint("Order Register", new Normal(2, 5), eventList, EventType.DEP_ORDER);
+        orderPoint = new ServicePoint("Order Register", new Normal(2, 0.1), eventList, EventType.DEP_ORDER);
 
-        payPoint = new ServicePoint("Payment Counter", new Normal(1, 5), eventList, EventType.DEP_PAY);
+        payPoint = new ServicePoint("Payment Counter", new Normal(1, 0.1), eventList, EventType.DEP_PAY);
 
-        tablePoint = new ServicePoint("Dining Tables", new Normal(15, 10), eventList, EventType.DEP_TABLE, 10);
+        tablePoint = new ServicePoint("Dining Tables", new Normal(15, 1.5), eventList, EventType.DEP_TABLE, 10);
 
-        drinkPoint = new ServicePoint("Drink Kiosk", new Normal(1, 2), eventList, EventType.DEP_DRINK);
+        drinkPoint = new ServicePoint("Drink Kiosk", new Normal(1, 0.1), eventList, EventType.DEP_DRINK);
 
-        oven1 = new ServicePoint("Oven 1", new Normal(10, 2), eventList, EventType.DEP_OVEN1, 4);
-        oven2 = new ServicePoint("Oven 2", new Normal(10, 2), eventList, EventType.DEP_OVEN2, 4);
+        oven1 = new ServicePoint("Oven 1", new Normal(10, 1), eventList, EventType.DEP_OVEN1, 4);
+        oven2 = new ServicePoint("Oven 2", new Normal(10, 1), eventList, EventType.DEP_OVEN2, 4);
 
-        pickupPoint = new ServicePoint("Pickup Counter", new Normal(1, 3), eventList, EventType.DEP_PICKUP);
+        pickupPoint = new ServicePoint("Pickup Counter", new Normal(1, 0.1), eventList, EventType.DEP_PICKUP);
 
-        courierPoint = new ServicePoint("Couriers", new Normal(15, 10), eventList, EventType.DEP_COURIER, 3);
+        courierPoint = new ServicePoint("Couriers", new Normal(15, 0.1), eventList, EventType.DEP_COURIER, 3);
 
         servicePoints = new ServicePoint[]{
                 orderPoint, payPoint, tablePoint, drinkPoint, oven1, oven2, pickupPoint, courierPoint

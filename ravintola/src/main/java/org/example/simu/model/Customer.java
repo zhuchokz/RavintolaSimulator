@@ -22,12 +22,13 @@ public class Customer {
 	private static int i = 1;
 	private static double totalStayTime = 0;
 	private static int completedCount = 0;
-	private static final Random random = new Random();
+	private static Random random = new Random(42);
 
 	public static void reset() { // Call this when starting a new simulation run
 		i = 1;
 		completedCount = 0;
 		totalStayTime = 0;
+		resetSeed();
 	}
 
 	private static CustomerType generateRandomType() {
@@ -116,6 +117,10 @@ public class Customer {
 		dineInWeight = dineIn;
 		takeawayWeight = takeaway;
 		onlineWeight = online;
+	}
+
+	public static void resetSeed() {
+		random = new Random(42);
 	}
 	
 	public void reportResults() {

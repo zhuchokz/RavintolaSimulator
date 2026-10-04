@@ -164,16 +164,16 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
                     sprite.addTarget(POS_PICKUP);
                     break;
                 case "DRINK":
+                    sprite.wentToDrink = true;
                     sprite.addTarget(POS_DINEIN_DESCEND);
                     sprite.addTarget(POS_TABLE);
                     sprite.addTarget(POS_DRINK);
                     break;
 
                 case "TABLE":
-                    if (sprite.x == POS_DRINK[0] && sprite.y == POS_DRINK[1]) {
+                    if (sprite.wentToDrink) {
                         sprite.addTarget(POS_TABLE);
                     } else {
-
                         sprite.addTarget(POS_DINEIN_DESCEND);
                         sprite.addTarget(POS_TABLE);
                     }
@@ -260,6 +260,7 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         Image characterImage;
         Color color;
         boolean isLeaving = false;
+        boolean wentToDrink = false;
         int assignedOven = 1; // Variable for synchronizing the furnace with the engine
         CustomerSprite(int[] startPos, Image image, Color color) {
             this.characterImage = image;
