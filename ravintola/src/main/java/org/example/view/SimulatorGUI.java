@@ -3,6 +3,8 @@ package org.example.view;
 import java.text.DecimalFormat;
 
 import javafx.beans.value.ChangeListener;
+import javafx.collections.FXCollections;
+import javafx.scene.control.cell.PropertyValueFactory;
 import org.example.controller.*;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -14,9 +16,15 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.text.*;
+import org.example.model.SimulationRun;
 import org.example.simu.framework.Trace;
 import org.example.simu.framework.Trace.Level;
 import org.example.simu.model.Customer;
+import org.example.model.PresetConfig;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.layout.Priority;
 
 public class SimulatorGUI extends Application implements ISimulatorUI {
 
@@ -77,14 +85,83 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		}
 	}
 
-	// -------------------------------------------------------------------------
-	// LEFT PARAMETER SIDEBAR LAYOUT
-	// -------------------------------------------------------------------------
 	private VBox createParameterSidebar() {
 		VBox panel = new VBox(12);
 		panel.setPadding(new Insets(10));
 		panel.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dcdcdc; -fx-border-width: 1;");
 		panel.setPrefWidth(260);
+
+		// --- SECTION 0: PRESET CONFIGURATIONS ---
+		Label presetHeader = createSectionHeader("Preset Configurations");
+
+		ComboBox<PresetConfig> presetComboBox = new ComboBox<>();
+		presetComboBox.setPromptText("Select Preset...");
+		presetComboBox.setMaxWidth(Double.MAX_VALUE);
+		HBox.setHgrow(presetComboBox, Priority.ALWAYS);
+
+		presetComboBox.setConverter(new javafx.util.StringConverter<PresetConfig>() {
+			@Override
+			public String toString(PresetConfig config) {
+				return config != null ? config.getConfigName() : "";
+			}
+
+			@Override
+			public PresetConfig fromString(String string) {
+				return null;
+			}
+		});
+
+		// Load saved presets from DB on UI creation
+		presetComboBox.getItems().addAll(controller.getAllPresets());
+
+		// Apply selected preset values to UI controls
+		presetComboBox.setOnAction(e -> {
+			PresetConfig selected = presetComboBox.getValue();
+			if (selected != null) {
+				controller.applyPresetToUI(selected);
+			}
+		});
+
+		// Save Current UI Settings as a Preset Button
+		Button savePresetButton = new Button("Save");
+		savePresetButton.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;");
+		savePresetButton.setOnAction(e -> {
+			TextInputDialog dialog = new TextInputDialog();
+			dialog.setTitle("Save Preset");
+			dialog.setHeaderText("Save current UI settings as a preset configuration");
+			dialog.setContentText("Preset Name:");
+
+			dialog.showAndWait().ifPresent(presetName -> {
+				if (!presetName.trim().isEmpty()) {
+					boolean success = controller.saveCurrentPreset(presetName.trim());
+					if (success) {
+						presetComboBox.getItems().setAll(controller.getAllPresets());
+
+						presetComboBox.getItems().stream()
+								.filter(p -> p.getConfigName().equalsIgnoreCase(presetName.trim()))
+								.findFirst()
+								.ifPresent(presetComboBox::setValue);
+
+						Alert alert = new Alert(Alert.AlertType.INFORMATION, "Preset saved successfully!", ButtonType.OK);
+						alert.showAndWait();
+					} else {
+						Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to save preset to database.", ButtonType.OK);
+						alert.showAndWait();
+					}
+				}
+			});
+		});
+
+		HBox presetControlsBox = new HBox(6, presetComboBox, savePresetButton);
+
+		// Manual layout without changing createLabeledControl
+		Label presetLabel = new Label("Load / Save Presets");
+		presetLabel.setFont(Font.font("Tahoma", FontWeight.NORMAL, 11));
+
+		VBox presetBox = new VBox(6,
+				presetHeader,
+				new VBox(2, presetLabel, presetControlsBox)
+		);
 
 		// --- SECTION 1: STATIONS PARAMETERS ---
 		Label stationHeader = createSectionHeader("Station Capacities");
@@ -116,17 +193,14 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		drinkProbabilitySlider.setShowTickMarks(true);
 		drinkProbabilitySlider.setShowTickLabels(true);
 
-		// Attach live listener for drink probability
 		drinkProbabilitySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
 			Customer.setDrinkProbability(newVal.doubleValue() / 100.0);
 		});
 
-		// 3 Independent Type Mix Sliders
 		dineInMixSlider = createMixSlider(40);
 		takeawayMixSlider = createMixSlider(40);
 		onlineMixSlider = createMixSlider(20);
 
-		// Attach live listener for customer weight mix
 		ChangeListener<Number> mixListener = (obs, oldVal, newVal) -> {
 			Customer.setCustomerWeights(
 					dineInMixSlider.getValue(),
@@ -171,7 +245,6 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 
 				pauseButton.setDisable(false);
 			} else {
-				// --- STOP SIMULATION ---
 				controller.stopSimulation();
 				resetControlButtons();
 			}
@@ -216,7 +289,16 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 				speedBox
 		);
 
-		panel.getChildren().addAll(stationBox, new Separator(), customerBox, new Separator(), execBox);
+		// Assemble all sections into panel in correct order:
+		panel.getChildren().addAll(
+				presetBox,
+				new Separator(),
+				stationBox,
+				new Separator(),
+				customerBox,
+				new Separator(),
+				execBox
+		);
 
 		ScrollPane scrollPane = new ScrollPane(panel);
 		scrollPane.setFitToWidth(true);
@@ -246,8 +328,77 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		statsTextArea.setWrapText(true);
 		statsTextArea.setPrefHeight(450);
 
-		statsBox.getChildren().addAll(statsHeader, customerCountLabel, totalTimeLabel, statsTextArea);
+		// History Button placed beneath the stats text area
+		Button historyButton = new Button("View Run History");
+		historyButton.setStyle("-fx-background-color: #673AB7; -fx-text-fill: white; -fx-font-weight: bold;");
+		historyButton.setMaxWidth(Double.MAX_VALUE);
+		historyButton.setOnAction(e -> openHistoryWindow());
+
+		statsBox.getChildren().addAll(
+				statsHeader,
+				customerCountLabel,
+				totalTimeLabel,
+				statsTextArea,
+				historyButton
+		);
 		return statsBox;
+	}
+
+	public void openHistoryWindow() {
+		Stage historyStage = new Stage();
+		historyStage.setTitle("Simulation Run History");
+
+		TableView<SimulationRun> table = new TableView<>();
+
+		// Define Columns mapped to SimulationRun getter property names
+		TableColumn<SimulationRun, Integer> colId = new TableColumn<>("Run ID");
+		colId.setCellValueFactory(new PropertyValueFactory<>("runId"));
+
+		TableColumn<SimulationRun, Double> colTime = new TableColumn<>("Total Time");
+		colTime.setCellValueFactory(new PropertyValueFactory<>("simulationTime"));
+
+		TableColumn<SimulationRun, Integer> colCustomers = new TableColumn<>("Total Customers");
+		colCustomers.setCellValueFactory(new PropertyValueFactory<>("totalCustomers"));
+
+		TableColumn<SimulationRun, Double> colAvgStay = new TableColumn<>("Avg Stay Time");
+		colAvgStay.setCellValueFactory(new PropertyValueFactory<>("averageStayTime"));
+
+		TableColumn<SimulationRun, Integer> colDineIn = new TableColumn<>("Dine-In");
+		colDineIn.setCellValueFactory(new PropertyValueFactory<>("dineinCount"));
+
+		TableColumn<SimulationRun, Integer> colTakeaway = new TableColumn<>("Takeaway");
+		colTakeaway.setCellValueFactory(new PropertyValueFactory<>("takeawayCount"));
+
+		TableColumn<SimulationRun, Integer> colOnline = new TableColumn<>("Online");
+		colOnline.setCellValueFactory(new PropertyValueFactory<>("onlineCount"));
+
+		TableColumn<SimulationRun, Double> colOven1 = new TableColumn<>("Oven 1 Util (%)");
+		colOven1.setCellValueFactory(new PropertyValueFactory<>("oven1Utilization"));
+
+		TableColumn<SimulationRun, Double> colOven2 = new TableColumn<>("Oven 2 Util (%)");
+		colOven2.setCellValueFactory(new PropertyValueFactory<>("oven2Utilization"));
+
+		table.getColumns().addAll(
+				colId, colTime, colCustomers, colAvgStay,
+				colDineIn, colTakeaway, colOnline, colOven1, colOven2
+		);
+
+		// Refresh Data from Controller/DAO
+		Button refreshBtn = new Button("Refresh History");
+		refreshBtn.setOnAction(e -> {
+			table.setItems(FXCollections.observableArrayList(controller.getAllSimulationRuns()));
+		});
+
+		// Initial Load
+		table.setItems(FXCollections.observableArrayList(controller.getAllSimulationRuns()));
+
+		VBox layout = new VBox(10, table, refreshBtn);
+		layout.setPadding(new Insets(10));
+		VBox.setVgrow(table, Priority.ALWAYS);
+
+		Scene scene = new Scene(layout, 800, 450);
+		historyStage.setScene(scene);
+		historyStage.show();
 	}
 
 	// -------------------------------------------------------------------------
@@ -387,6 +538,37 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		if (statsTextArea != null) {
 			statsTextArea.setText(resultsText);
 		}
+	}
+
+	@Override
+	public void setDrinkProbability(double value) {
+		// Converts decimal probability (e.g., 0.50) to slider scale (0 - 100)
+		drinkProbabilitySlider.setValue(value <= 1.0 ? value * 100.0 : value);
+	}
+
+	@Override
+	public void setOven1Capacity(int capacity) {
+		oven1Slider.setValue(capacity);
+	}
+
+	@Override
+	public void setOven2Capacity(int capacity) {
+		oven2Slider.setValue(capacity);
+	}
+
+	@Override
+	public void setTableCapacity(int capacity) {
+		tableSlider.setValue(capacity);
+	}
+
+	@Override
+	public void setCourierCapacity(int capacity) {
+		courierSlider.setValue(capacity);
+	}
+
+	@Override
+	public void setArrivalPace(String pace) {
+		paceChoiceBox.setValue(pace);
 	}
 
 	public static void main(String[] args) {

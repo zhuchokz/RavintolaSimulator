@@ -7,6 +7,9 @@ import org.example.simu.framework.ArrivalProcess;
 import org.example.simu.framework.Clock;
 import org.example.simu.framework.Engine;
 import org.example.simu.framework.Event;
+import org.example.model.CustomerLog;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class MyEngine extends Engine {
@@ -24,22 +27,20 @@ public class MyEngine extends Engine {
     private volatile boolean paused = false;
     private volatile boolean stopped = false;
 
+    private List<CustomerLog> finishedCustomerLogs = new ArrayList<>();
+
     public MyEngine(IControllerMtoV controller) {
         super(controller);
 
         orderPoint = new ServicePoint("Order Register", new Normal(2, 0.1), eventList, EventType.DEP_ORDER);
-
         payPoint = new ServicePoint("Payment Counter", new Normal(1, 0.1), eventList, EventType.DEP_PAY);
-
         tablePoint = new ServicePoint("Dining Tables", new Normal(15, 1.5), eventList, EventType.DEP_TABLE, 10);
-
         drinkPoint = new ServicePoint("Drink Kiosk", new Normal(1, 0.1), eventList, EventType.DEP_DRINK);
 
         oven1 = new ServicePoint("Oven 1", new Normal(10, 1), eventList, EventType.DEP_OVEN1, 4);
         oven2 = new ServicePoint("Oven 2", new Normal(10, 1), eventList, EventType.DEP_OVEN2, 4);
 
         pickupPoint = new ServicePoint("Pickup Counter", new Normal(1, 0.1), eventList, EventType.DEP_PICKUP);
-
         courierPoint = new ServicePoint("Couriers", new Normal(15, 0.1), eventList, EventType.DEP_COURIER, 3);
 
         servicePoints = new ServicePoint[]{
@@ -191,6 +192,12 @@ public class MyEngine extends Engine {
     private void finishCustomer(Customer c) {
         c.setRemovalTime(Clock.getInstance().getTime());
         c.reportResults();
+        logCompletedCustomer(
+                c.getId(),
+                c.getType().name(),
+                c.getArrivalTime(),
+                c.getRemovalTime()
+        );
         controller.visualiseCustomer(c.getId(), c.getType(), "FINISHED");
     }
 
@@ -198,6 +205,24 @@ public class MyEngine extends Engine {
         this.stopped = true;
         this.paused = false;
         setSimulationTime(0);
+    }
+
+    public void logCompletedCustomer(int customerId, String customerType, double arrivalTime, double exitTime) {
+        double totalStayTime = exitTime - arrivalTime;
+        CustomerLog log = new CustomerLog(0, customerId, customerType, arrivalTime, exitTime, totalStayTime);
+        finishedCustomerLogs.add(log);
+    }
+
+    public List<CustomerLog> getFinishedCustomerLogs() {
+        return finishedCustomerLogs;
+    }
+
+    public double getOven1Utilization() {
+        return oven1.getUtilization();
+    }
+
+    public double getOven2Utilization() {
+        return oven2.getUtilization();
     }
 
     @Override
@@ -232,5 +257,9 @@ public class MyEngine extends Engine {
         // Send data to Controller
         controller.showEndTime(totalTime);
         controller.showResults(sb.toString());
+
+        if (controller instanceof org.example.controller.Controller) {
+            ((org.example.controller.Controller) controller).saveSimulationResultsToDatabase(this);
+        }
     }
 }

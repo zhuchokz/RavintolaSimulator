@@ -23,4 +23,12 @@ public interface ISimulatorUI {
 	public double getDineInWeight();
 	public double getTakeawayWeight();
 	public double getOnlineWeight();
+
+	// Setters
+	public void setDrinkProbability(double value);
+	public void setOven1Capacity(int capacity);
+	public void setOven2Capacity(int capacity);
+	public void setTableCapacity(int capacity);
+	public void setCourierCapacity(int capacity);
+	public void setArrivalPace(String pace);
 }
