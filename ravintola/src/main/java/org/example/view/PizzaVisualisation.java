@@ -7,9 +7,9 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
-
-import java.util.Random;
 import java.util.Map;
+import java.util.Queue;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.net.URL;
 import java.nio.file.Files;
@@ -20,8 +20,27 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
     private GraphicsContext gc;
     private Image backgroundImage;
     private Map<Integer, CustomerSprite> customers = new ConcurrentHashMap<>();
-    private Random random = new Random();
     private double currentBallSpeed = 3.5;
+
+    private volatile boolean isPaused = false;
+    private volatile boolean isRunning = false;
+
+    // Initial capacity values (they change corresponding to GUI)
+    private int oven1Capacity = 4;
+    private int oven2Capacity = 4;
+    private int tableCapacity = 10;
+    private int courierCapacity = 3;
+
+    private int oven1Count = 0;
+    private int oven2Count = 0;
+    private int currentSeatedCount = 0;
+    private int courierCount = 0;
+
+    // Waiting queue lists
+    private Queue<CustomerSprite> oven1WaitingQueue = new LinkedList<>();
+    private Queue<CustomerSprite> oven2WaitingQueue = new LinkedList<>();
+    private Queue<CustomerSprite> tableWaitingQueue = new LinkedList<>();
+    private Queue<CustomerSprite> courierWaitingQueue = new LinkedList<>();
 
     private Image redCustomerImage;
     private Image blueCustomerImage;
@@ -92,9 +111,42 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         return null;
     }
 
+    public void setStationCapacities(int o1Cap, int o2Cap, int tableCap, int courierCap) {
+        this.oven1Capacity = o1Cap;
+        this.oven2Capacity = o2Cap;
+        this.tableCapacity = tableCap;
+        this.courierCapacity = courierCap;
+    }
+
+    @Override
+    public void startVisuals() {
+        this.isRunning = true;
+        this.isPaused = false;
+    }
+
+    @Override
+    public void setPaused(boolean paused) {
+        this.isPaused = paused;
+    }
+
     @Override
     public void resetVisuals() {
-        Platform.runLater(() -> customers.clear());
+        this.isRunning = false;
+        this.isPaused = false;
+        Platform.runLater(() -> {
+            customers.clear();
+            oven1WaitingQueue.clear();
+            oven2WaitingQueue.clear();
+            tableWaitingQueue.clear();
+            courierWaitingQueue.clear();
+
+            oven1Count = 0;
+            oven2Count = 0;
+            currentSeatedCount = 0;
+            courierCount = 0;
+
+            clearDisplay();
+        });
     }
 
     @Override
@@ -114,9 +166,47 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         }
     }
 
+    private void freeOvenSlotAndAdvanceQueue(CustomerSprite sprite) {
+        if (sprite.assignedOven == 1) {
+            if (sprite.isBaking) {
+                sprite.isBaking = false;
+                oven1Count--;
+            }
+            if (oven1Count < oven1Capacity && !oven1WaitingQueue.isEmpty()) {
+                CustomerSprite next = oven1WaitingQueue.poll();
+                oven1Count++;
+                next.isBaking = true;
+                next.addTarget(POS_OVEN1);
+            }
+        } else if (sprite.assignedOven == 2) {
+            if (sprite.isBaking) {
+                sprite.isBaking = false;
+                oven2Count--;
+            }
+            if (oven2Count < oven2Capacity && !oven2WaitingQueue.isEmpty()) {
+                CustomerSprite next = oven2WaitingQueue.poll();
+                oven2Count++;
+                next.isBaking = true;
+                next.addTarget(POS_OVEN2);
+            }
+        }
+    }
+
+    private void routeCustomerToSeated(CustomerSprite sprite) {
+        sprite.isSeated = true;
+        sprite.addTarget(POS_DINEIN_DESCEND);
+        sprite.addTarget(POS_TABLE);
+        if (sprite.wantsDrink) {
+            sprite.addTarget(POS_DRINK);
+            sprite.addTarget(POS_TABLE);
+        }
+    }
+
     @Override
     public void visualiseCustomer(int id, CustomerType type, String action) {
         Platform.runLater(() -> {
+            if (!isRunning) return;
+
             if ("ARRIVED".equals(action)) {
                 int[] startPos = (type == CustomerType.ONLINE) ? POS_ONLINE_SPAWN : POS_ARRIVAL;
                 Image img = (type == CustomerType.ONLINE) ? greenCustomerImage :
@@ -136,9 +226,11 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
                 case "ORDER":
                     sprite.addTarget(POS_ORDER_QUEUE);
                     break;
+
                 case "PAY":
                     sprite.addTarget(POS_PAYMENT_QUEUE);
                     break;
+
                 case "OVEN1":
                     if (type == CustomerType.ONLINE) {
                         sprite.addTarget(POS_ONLINE_FLY);
@@ -146,7 +238,16 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
                     }
                     sprite.addTarget(POS_OVEN_QUEUE);
                     sprite.assignedOven = 1;
+
+                    if (oven1Count < oven1Capacity) {
+                        oven1Count++;
+                        sprite.isBaking = true;
+                        sprite.addTarget(POS_OVEN1);
+                    } else {
+                        oven1WaitingQueue.add(sprite);
+                    }
                     break;
+
                 case "OVEN2":
                     if (type == CustomerType.ONLINE) {
                         sprite.addTarget(POS_ONLINE_FLY);
@@ -154,32 +255,87 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
                     }
                     sprite.addTarget(POS_OVEN_QUEUE);
                     sprite.assignedOven = 2;
+
+                    if (oven2Count < oven2Capacity) {
+                        oven2Count++;
+                        sprite.isBaking = true;
+                        sprite.addTarget(POS_OVEN2);
+                    } else {
+                        oven2WaitingQueue.add(sprite);
+                    }
                     break;
+
                 case "COURIER":
-                    sprite.addTarget(sprite.assignedOven == 1 ? POS_OVEN1 : POS_OVEN2);
-                    sprite.addTarget(POS_COURIER);
+                    if (!sprite.isBaking) {
+                        sprite.addTarget(sprite.assignedOven == 1 ? POS_OVEN1 : POS_OVEN2);
+                    }
+                    freeOvenSlotAndAdvanceQueue(sprite);
+                    sprite.addTarget(POS_COURIER); // Always move to courier point first
+
+                    if (courierCount < courierCapacity) {
+                        courierCount++;
+                        sprite.isAtCourier = true;
+                    } else {
+                        courierWaitingQueue.add(sprite); // Wait at courier point if capacity full
+                    }
                     break;
+
                 case "PICKUP":
-                    sprite.addTarget(sprite.assignedOven == 1 ? POS_OVEN1 : POS_OVEN2);
+                    if (!sprite.isBaking) {
+                        sprite.addTarget(sprite.assignedOven == 1 ? POS_OVEN1 : POS_OVEN2);
+                    }
+                    freeOvenSlotAndAdvanceQueue(sprite);
                     sprite.addTarget(POS_PICKUP);
                     break;
+
                 case "DRINK":
-                    sprite.wentToDrink = true;
-                    sprite.addTarget(POS_DINEIN_DESCEND);
-                    sprite.addTarget(POS_TABLE);
-                    sprite.addTarget(POS_DRINK);
+                    sprite.wantsDrink = true;
+                    if (currentSeatedCount < tableCapacity) {
+                        currentSeatedCount++;
+                        routeCustomerToSeated(sprite);
+                    } else if (!tableWaitingQueue.contains(sprite)) {
+                        tableWaitingQueue.add(sprite);
+                    }
                     break;
 
                 case "TABLE":
-                    if (sprite.wentToDrink) {
-                        sprite.addTarget(POS_TABLE);
-                    } else {
-                        sprite.addTarget(POS_DINEIN_DESCEND);
-                        sprite.addTarget(POS_TABLE);
+                    if (!sprite.isSeated && !sprite.wantsDrink) {
+                        if (currentSeatedCount < tableCapacity) {
+                            currentSeatedCount++;
+                            routeCustomerToSeated(sprite);
+                        } else if (!tableWaitingQueue.contains(sprite)) {
+                            tableWaitingQueue.add(sprite); // Wait at POS_PICKUP
+                        }
                     }
                     break;
+
                 case "FINISHED":
                     sprite.isLeaving = true;
+
+                    // Free table spot & advance table waiting queue from POS_PICKUP
+                    if (sprite.isSeated) {
+                        sprite.isSeated = false;
+                        currentSeatedCount--;
+
+                        CustomerSprite nextWaitingTable = tableWaitingQueue.poll();
+                        if (nextWaitingTable != null) {
+                            currentSeatedCount++;
+                            routeCustomerToSeated(nextWaitingTable);
+                        }
+                    }
+
+                    // Free courier spot & advance courier waiting queue
+                    if (sprite.isAtCourier) {
+                        sprite.isAtCourier = false;
+                        courierCount--;
+
+                        CustomerSprite nextWaitingCourier = courierWaitingQueue.poll();
+                        if (nextWaitingCourier != null) {
+                            courierCount++;
+                            nextWaitingCourier.isAtCourier = true;
+                        }
+                    }
+
                     if (type == CustomerType.ONLINE) {
                         sprite.addTarget(POS_ONLINE_EXIT);
                     } else if (type == CustomerType.TAKEAWAY) {
@@ -199,7 +355,6 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
             CustomerSprite c = customers.get(id);
             if (c == null) continue;
 
-// If there are tasks in the movement queue, move toward the current target.
             if (!c.targetPoints.isEmpty()) {
                 int[] target = c.targetPoints.peek();
                 double dx = target[0] - c.x;
@@ -209,14 +364,12 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
                 if (distance < 4) {
                     c.x = target[0];
                     c.y = target[1];
-                    c.targetPoints.poll(); // Point reached, remove it from the task queue
+                    c.targetPoints.poll();
                 } else {
                     c.x += (dx / distance) * currentBallSpeed;
                     c.y += (dy / distance) * currentBallSpeed;
                 }
             } else {
-                // If there are no more targets and the engine has issued the FINISHED command, remove from the screen
-
                 if (c.isLeaving) {
                     customers.remove(id);
                 }
@@ -234,7 +387,9 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
                 }
 
                 Platform.runLater(() -> {
-                    updateCustomerPositions();
+                    if (!isPaused) {
+                        updateCustomerPositions();
+                    }
                     clearDisplay();
 
                     for (CustomerSprite c : customers.values()) {
@@ -254,20 +409,26 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         animationThread.setDaemon(true);
         animationThread.start();
     }
+
     private static class CustomerSprite {
         double x, y;
-        java.util.Queue<int[]> targetPoints = new java.util.LinkedList<>();
+        Queue<int[]> targetPoints = new LinkedList<>();
         Image characterImage;
         Color color;
         boolean isLeaving = false;
-        boolean wentToDrink = false;
-        int assignedOven = 1; // Variable for synchronizing the furnace with the engine
+        boolean wantsDrink = false;
+        boolean isBaking = false;
+        boolean isSeated = false;
+        boolean isAtCourier = false;
+        int assignedOven = 1;
+
         CustomerSprite(int[] startPos, Image image, Color color) {
             this.characterImage = image;
             this.color = color;
             this.x = startPos[0];
             this.y = startPos[1];
         }
+
         void addTarget(int[] point) {
             targetPoints.add(point);
         }

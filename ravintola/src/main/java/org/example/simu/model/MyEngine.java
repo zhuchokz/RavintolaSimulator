@@ -237,9 +237,9 @@ public class MyEngine extends Engine {
 
         // Build string output for JavaFX sidebar
         StringBuilder sb = new StringBuilder();
-        sb.append("=========================================\n");
-        sb.append("       SIMULATION RESULTS REPORT        \n");
-        sb.append("=========================================\n");
+        sb.append("======================\n");
+        sb.append("SIMULATION RESULTS REPORT\n");
+        sb.append("======================\n");
         sb.append(String.format("Total Duration: %.2f minutes\n\n", totalTime));
 
         for (ServicePoint sp : servicePoints) {
@@ -247,11 +247,11 @@ public class MyEngine extends Engine {
 
             // Collect station statistics for GUI
             sb.append(String.format("--- %s ---\n", sp.getName()));
-            sb.append(String.format("  Capacity: %d\n", sp.getCapacity()));
-            sb.append(String.format("  Total Serviced: %d\n", sp.getTotalServed()));
-            sb.append(String.format("  Utilization Rate: %.2f%%\n", sp.getUtilization()));
-            sb.append(String.format("  Avg Queue Length: %.2f customers\n", sp.getAverageQueueLength()));
-            sb.append(String.format("  Max Queue Length: %d customers\n\n", sp.getMaxQueueSize()));
+            sb.append(String.format("Capacity: %d\n", sp.getCapacity()));
+            sb.append(String.format("Total Serviced: %d\n", sp.getTotalServed()));
+            sb.append(String.format("Utilization Rate: %.2f%%\n", sp.getUtilization()));
+            sb.append(String.format("Avg Queue Length: %.2f customers\n", sp.getAverageQueueLength()));
+            sb.append(String.format("Max Queue Length: %d customers\n\n", sp.getMaxQueueSize()));
         }
 
         // Send data to Controller

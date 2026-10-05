@@ -10,7 +10,6 @@ public class MariaDbConnection {
 
         try {
             Class.forName("org.mariadb.jdbc.Driver");
-            System.out.println("MariaDB driver found!");
         } catch (ClassNotFoundException e) {
             System.out.println("MariaDB driver NOT found!");
             e.printStackTrace();
