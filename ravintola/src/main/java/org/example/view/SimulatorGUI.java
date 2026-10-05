@@ -9,7 +9,6 @@ import org.example.controller.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.stage.Stage;
 import javafx.scene.*;
 import javafx.scene.canvas.Canvas;
@@ -25,6 +24,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.Priority;
+import javafx.scene.image.Image;
 
 public class SimulatorGUI extends Application implements ISimulatorUI {
 
@@ -59,6 +59,7 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 	@Override
 	public void start(Stage primaryStage) {
 		try {
+			primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/icon.jfif")));
 			primaryStage.setTitle("Pizzeria Simulator");
 			primaryStage.setOnCloseRequest(t -> {
 				Platform.exit();
@@ -72,10 +73,37 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 
 			// 2. Root Layout (Left: Sidebar, Center: Canvas, Right: Stats)
 			HBox mainLayout = new HBox(15);
+			mainLayout.setStyle("-fx-border-color: #aeaeae; -fx-border-width: 3; -fx-border-style: solid;");
 			mainLayout.setPadding(new Insets(10));
 			mainLayout.getChildren().addAll(parameterSidebar, (Canvas) display, statsSidebar);
 
 			Scene scene = new Scene(mainLayout);
+			String cssData =
+					".label { -fx-font-family: 'Comic Sans MS'; -fx-text-fill: #4a3b52; }\n" +
+
+							".slider .thumb { " +
+							"    -fx-background-color: #8e44ad; " +
+							"    -fx-background-radius: 10px; " +
+							"}\n" +
+
+							".slider .filled-track { " +
+							"    -fx-background-color: #d1b3ff; " +
+							"    -fx-background-insets: 0; " +
+							"}\n" +
+
+							".slider .track { " +
+							"    -fx-background-color: #f0ebf7; " +
+							"    -fx-background-insets: 0; " +
+							"}\n" +
+
+							".slider .axis .axis-tick-label { " +
+							"    -fx-font-family: 'Comic Sans MS'; " +
+							"    -fx-font-size: 9px; " +
+							"    -fx-fill: #7d6e85; " +
+							"}\n" ;
+
+			String encodedCss = "data:text/css," + cssData.replace(" ", "%20").replace("\n", "%0A");
+			scene.getStylesheets().add(encodedCss);
 			primaryStage.setScene(scene);
 			primaryStage.setResizable(false);
 			primaryStage.show();
@@ -88,7 +116,7 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 	private VBox createParameterSidebar() {
 		VBox panel = new VBox(12);
 		panel.setPadding(new Insets(10));
-		panel.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dcdcdc; -fx-border-width: 1;");
+		panel.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dcdcdc; -fx-border-width: 1;" + "-fx-font-family: 'Comic Sans MS'");
 		panel.setPrefWidth(260);
 
 		// --- SECTION 0: PRESET CONFIGURATIONS ---
@@ -324,9 +352,11 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		totalTimeLabel.setStyle("-fx-text-fill: #008000;");
 
 		statsTextArea = new TextArea();
+
 		statsTextArea.setEditable(false);
 		statsTextArea.setWrapText(true);
 		statsTextArea.setPrefHeight(450);
+		statsTextArea.setStyle("-fx-background-color: #8f5de4; -fx-border-color: #151515; -fx-border-width: 1;");
 
 		// History Button placed beneath the stats text area
 		Button historyButton = new Button("View Run History");
