@@ -377,6 +377,7 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 	public void openHistoryWindow() {
 		Stage historyStage = new Stage();
 		historyStage.setTitle("Simulation Run History");
+		historyStage.getIcons().add(new Image(getClass().getResourceAsStream("/icon.jfif")));
 
 		TableView<SimulationRun> table = new TableView<>();
 
