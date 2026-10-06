@@ -11,14 +11,10 @@ public class PresetConfigDAO {
 
     public int savePreset(PresetConfig config) {
 
-        String sql = """
-                INSERT INTO preset_configs
-                (config_name, arrival_mean,
-                 oven1_capacity, oven2_capacity,
-                 table_capacity, courier_capacity,
-                 drink_probability)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """;
+        String sql = "INSERT INTO preset_configs (config_name, arrival_mean, oven1_capacity, oven2_capacity, " +
+                "table_capacity, courier_capacity, drink_probability, " +
+                "oven1_service_time, oven2_service_time, table_service_time, courier_service_time) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection connection = MariaDbConnection.getConnection();
              PreparedStatement statement =
@@ -31,6 +27,10 @@ public class PresetConfigDAO {
             statement.setInt(5, config.getTableCapacity());
             statement.setInt(6, config.getCourierCapacity());
             statement.setDouble(7, config.getDrinkProbability());
+            statement.setDouble(8, config.getOven1ServiceTime());
+            statement.setDouble(9, config.getOven2ServiceTime());
+            statement.setDouble(10, config.getTableServiceTime());
+            statement.setDouble(11, config.getCourierServiceTime());
 
             statement.executeUpdate();
 
@@ -112,7 +112,11 @@ public class PresetConfigDAO {
                     oven2_capacity = ?,
                     table_capacity = ?,
                     courier_capacity = ?,
-                    drink_probability = ?
+                    drink_probability = ?,
+                    oven1_service_time = ?,
+                    oven2_service_time = ?,
+                    table_service_time = ?,
+                    courier_service_time = ?
                 WHERE config_id = ?
                 """;
 
@@ -126,7 +130,11 @@ public class PresetConfigDAO {
             statement.setInt(5, config.getTableCapacity());
             statement.setInt(6, config.getCourierCapacity());
             statement.setDouble(7, config.getDrinkProbability());
-            statement.setInt(8, config.getConfigId());
+            statement.setDouble(8, config.getOven1ServiceTime());
+            statement.setDouble(9, config.getOven2ServiceTime());
+            statement.setDouble(10, config.getTableServiceTime());
+            statement.setDouble(11, config.getCourierServiceTime());
+            statement.setInt(12, config.getConfigId());
 
             statement.executeUpdate();
 
@@ -166,6 +174,10 @@ public class PresetConfigDAO {
         config.setTableCapacity(result.getInt("table_capacity"));
         config.setCourierCapacity(result.getInt("courier_capacity"));
         config.setDrinkProbability(result.getDouble("drink_probability"));
+        config.setOven1ServiceTime(result.getDouble("oven1_service_time"));
+        config.setOven2ServiceTime(result.getDouble("oven2_service_time"));
+        config.setTableServiceTime(result.getDouble("table_service_time"));
+        config.setCourierServiceTime(result.getDouble("courier_service_time"));
 
         return config;
     }

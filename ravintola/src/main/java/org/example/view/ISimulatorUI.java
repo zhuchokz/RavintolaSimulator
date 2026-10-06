@@ -12,17 +12,19 @@ public interface ISimulatorUI {
 	// Controller requires
 	public IVisualisation getVisualisation();
 
-	// Station Capacities
+	// Getters
 	public int getOven1Capacity();
 	public int getOven2Capacity();
 	public int getTableCapacity();
 	public int getCourierCapacity();
-
-	// Customer & Pace settings
 	public String getArrivalPace();
 	public double getDineInWeight();
 	public double getTakeawayWeight();
 	public double getOnlineWeight();
+	public double getOven1ServiceTime();
+	public double getOven2ServiceTime();
+	public double getTableServiceTime();
+	public double getCourierServiceTime();
 
 	// Setters
 	public void setDrinkProbability(double value);
@@ -31,4 +33,8 @@ public interface ISimulatorUI {
 	public void setTableCapacity(int capacity);
 	public void setCourierCapacity(int capacity);
 	public void setArrivalPace(String pace);
+	public void setOven1ServiceTime(double time);
+	public void setOven2ServiceTime(double time);
+	public void setTableServiceTime(double time);
+	public void setCourierServiceTime(double time);
 }

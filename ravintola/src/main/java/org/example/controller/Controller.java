@@ -61,6 +61,13 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		);
 		myEngine.setArrivalPace(ui.getArrivalPace());
 
+		myEngine.setServiceTimes(
+				ui.getOven1ServiceTime(),
+				ui.getOven2ServiceTime(),
+				ui.getTableServiceTime(),
+				ui.getCourierServiceTime()
+		);
+
 		if (ui.getVisualisation() instanceof PizzaVisualisation) {
 			ui.getVisualisation().adjustAnimationSpeed(1.0);
 			ui.getVisualisation().resetVisuals();
@@ -233,7 +240,11 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 				ui.getOven2Capacity(),
 				ui.getTableCapacity(),
 				ui.getCourierCapacity(),
-				ui.getDrinkProbability()
+				ui.getDrinkProbability(),
+				ui.getOven1ServiceTime(),
+				ui.getOven2ServiceTime(),
+				ui.getTableServiceTime(),
+				ui.getCourierServiceTime()
 		);
 
 		int generatedId = presetDAO.savePreset(config);
@@ -251,6 +262,10 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 			ui.setTableCapacity(config.getTableCapacity());
 			ui.setCourierCapacity(config.getCourierCapacity());
 			ui.setArrivalPace(convertMeanToArrivalPace(config.getArrivalMean()));
+			ui.setOven1ServiceTime(config.getOven1ServiceTime());
+			ui.setOven2ServiceTime(config.getOven2ServiceTime());
+			ui.setTableServiceTime(config.getTableServiceTime());
+			ui.setCourierServiceTime(config.getCourierServiceTime());
 		});
 	}
 

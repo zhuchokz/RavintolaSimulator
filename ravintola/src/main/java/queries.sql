@@ -23,7 +23,11 @@ CREATE TABLE IF NOT EXISTS preset_configs (
     oven2_capacity INT NOT NULL DEFAULT 4,
     table_capacity INT NOT NULL DEFAULT 10,
     courier_capacity INT NOT NULL DEFAULT 3,
-    drink_probability DOUBLE NOT NULL DEFAULT 0.50
+    drink_probability DOUBLE NOT NULL DEFAULT 0.50,
+                                              oven1_service_time DOUBLE NOT NULL DEFAULT 10.0,
+                                              oven2_service_time DOUBLE NOT NULL DEFAULT 10.0,
+                                              table_service_time DOUBLE NOT NULL DEFAULT 15.0,
+                                              courier_service_time DOUBLE NOT NULL DEFAULT 15.0
     );
 
 -- Table 3: Detailed Per-Customer Records

@@ -10,6 +10,10 @@ public class PresetConfig {
     private int tableCapacity;
     private int courierCapacity;
     private double drinkProbability;
+    private double oven1ServiceTime;
+    private double oven2ServiceTime;
+    private double tableServiceTime;
+    private double courierServiceTime;
 
     public PresetConfig() {
     }
@@ -20,7 +24,11 @@ public class PresetConfig {
                         int oven2Capacity,
                         int tableCapacity,
                         int courierCapacity,
-                        double drinkProbability) {
+                        double drinkProbability,
+                        double oven1ServiceTime,
+                        double oven2ServiceTime,
+                        double tableServiceTime,
+                        double courierServiceTime) {
 
         this.configName = configName;
         this.arrivalMean = arrivalMean;
@@ -29,7 +37,25 @@ public class PresetConfig {
         this.tableCapacity = tableCapacity;
         this.courierCapacity = courierCapacity;
         this.drinkProbability = drinkProbability;
+        this.oven1ServiceTime = oven1ServiceTime;
+        this.oven2ServiceTime = oven2ServiceTime;
+        this.tableServiceTime = tableServiceTime;
+        this.courierServiceTime = courierServiceTime;
     }
+
+    public static final PresetConfig DEFAULT = new PresetConfig(
+            "Default",
+            5.0,   // arrival mean (Normal 5.0s)
+            4,     // oven 1 cap
+            4,     // oven 2 cap
+            10,    // table cap
+            3,     // courier cap
+            0.50,  // drink prob
+            10.0,  // oven 1 time
+            10.0,  // oven 2 time
+            15.0,  // table time
+            15.0   // courier time
+    );
 
     public int getConfigId() {
         return configId;
@@ -93,5 +119,29 @@ public class PresetConfig {
 
     public void setDrinkProbability(double drinkProbability) {
         this.drinkProbability = drinkProbability;
+    }
+
+    public double getOven1ServiceTime() { return oven1ServiceTime; }
+
+    public double getOven2ServiceTime() { return oven2ServiceTime; }
+
+    public double getTableServiceTime() { return tableServiceTime; }
+
+    public double getCourierServiceTime() { return courierServiceTime; }
+
+    public void setOven1ServiceTime(double oven1ServiceTime) {
+        this.oven1ServiceTime = oven1ServiceTime;
+    }
+
+    public void setOven2ServiceTime(double oven2ServiceTime) {
+        this.oven2ServiceTime = oven2ServiceTime;
+    }
+
+    public void setTableServiceTime(double tableServiceTime) {
+        this.tableServiceTime = tableServiceTime;
+    }
+
+    public void setCourierServiceTime(double courierServiceTime) {
+        this.courierServiceTime = courierServiceTime;
     }
 }

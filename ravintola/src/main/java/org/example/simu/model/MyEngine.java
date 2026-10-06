@@ -32,16 +32,16 @@ public class MyEngine extends Engine {
     public MyEngine(IControllerMtoV controller) {
         super(controller);
 
-        orderPoint = new ServicePoint("Order Register", new Normal(2, 0.1), eventList, EventType.DEP_ORDER);
-        payPoint = new ServicePoint("Payment Counter", new Normal(1, 0.1), eventList, EventType.DEP_PAY);
-        tablePoint = new ServicePoint("Dining Tables", new Normal(15, 1.5), eventList, EventType.DEP_TABLE, 10);
-        drinkPoint = new ServicePoint("Drink Kiosk", new Normal(1, 0.1), eventList, EventType.DEP_DRINK);
+        orderPoint = new ServicePoint("Order Register", new Normal(3, 0.4), eventList, EventType.DEP_ORDER);
+        payPoint = new ServicePoint("Payment Counter", new Normal(2, 0.2), eventList, EventType.DEP_PAY);
+        drinkPoint = new ServicePoint("Drink Kiosk", new Normal(3, 0.4), eventList, EventType.DEP_DRINK);
+        pickupPoint = new ServicePoint("Pickup Counter", new Normal(2, 0.2), eventList, EventType.DEP_PICKUP);
 
-        oven1 = new ServicePoint("Oven 1", new Normal(10, 1), eventList, EventType.DEP_OVEN1, 4);
-        oven2 = new ServicePoint("Oven 2", new Normal(10, 1), eventList, EventType.DEP_OVEN2, 4);
+        oven1 = new ServicePoint("Oven 1", new Normal(10, 1.0), eventList, EventType.DEP_OVEN1, 4);
+        oven2 = new ServicePoint("Oven 2", new Normal(10, 1.0), eventList, EventType.DEP_OVEN2, 4);
 
-        pickupPoint = new ServicePoint("Pickup Counter", new Normal(1, 0.1), eventList, EventType.DEP_PICKUP);
-        courierPoint = new ServicePoint("Couriers", new Normal(15, 0.1), eventList, EventType.DEP_COURIER, 3);
+        tablePoint = new ServicePoint("Dining Tables", new Normal(15, 9.0), eventList, EventType.DEP_TABLE, 10);
+        courierPoint = new ServicePoint("Couriers", new Normal(15, 9.0), eventList, EventType.DEP_COURIER, 3);
 
         servicePoints = new ServicePoint[]{
                 orderPoint, payPoint, tablePoint, drinkPoint, oven1, oven2, pickupPoint, courierPoint
@@ -63,6 +63,24 @@ public class MyEngine extends Engine {
         oven2.setCapacity(o2Cap);
         tablePoint.setCapacity(tableCap);
         courierPoint.setCapacity(courierCap);
+    }
+
+    public void setServiceTimes(double o1Time, double o2Time, double tableTime, double courierTime) {
+        int o1Cap = oven1.getCapacity();
+        int o2Cap = oven2.getCapacity();
+        int tCap  = tablePoint.getCapacity();
+        int cCap  = courierPoint.getCapacity();
+
+        // Re-initialize service points with new mean durations
+        oven1 = new ServicePoint("Oven 1", new Normal(o1Time, 1.0), eventList, EventType.DEP_OVEN1, o1Cap);
+        oven2 = new ServicePoint("Oven 2", new Normal(o2Time, 1.0), eventList, EventType.DEP_OVEN2, o2Cap);
+        tablePoint = new ServicePoint("Dining Tables", new Normal(tableTime, 1.5), eventList, EventType.DEP_TABLE, tCap);
+        courierPoint = new ServicePoint("Couriers", new Normal(courierTime, 0.1), eventList, EventType.DEP_COURIER, cCap);
+
+        // Update service points array reference
+        servicePoints = new ServicePoint[]{
+                orderPoint, payPoint, tablePoint, drinkPoint, oven1, oven2, pickupPoint, courierPoint
+        };
     }
 
     public void setArrivalPace(String pace) {
@@ -237,9 +255,9 @@ public class MyEngine extends Engine {
 
         // Build string output for JavaFX sidebar
         StringBuilder sb = new StringBuilder();
-        sb.append("======================\n");
+        sb.append("=====================\n");
         sb.append("SIMULATION RESULTS REPORT\n");
-        sb.append("======================\n");
+        sb.append("=====================\n");
         sb.append(String.format("Total Duration: %.2f minutes\n\n", totalTime));
 
         for (ServicePoint sp : servicePoints) {

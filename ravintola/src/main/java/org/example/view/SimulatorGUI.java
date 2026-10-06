@@ -50,6 +50,8 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 	private ChoiceBox<String> paceChoiceBox;
 	private Slider dineInMixSlider, takeawayMixSlider, onlineMixSlider;
 
+	private Spinner<Double> spinOven1Time, spinOven2Time, spinTableTime, spinCourierTime;
+
 	@Override
 	public void init() {
 		Trace.setTraceLevel(Level.INFO);
@@ -140,6 +142,7 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		});
 
 		// Load saved presets from DB on UI creation
+		presetComboBox.getItems().add(PresetConfig.DEFAULT);
 		presetComboBox.getItems().addAll(controller.getAllPresets());
 
 		// Apply selected preset values to UI controls
@@ -192,18 +195,36 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		);
 
 		// --- SECTION 1: STATIONS PARAMETERS ---
-		Label stationHeader = createSectionHeader("Station Capacities");
+		Label stationHeader = createSectionHeader("Station Capacities & Service Times (s)");
+
 		oven1Slider = createSnapSlider(2, 12, 4);
 		oven2Slider = createSnapSlider(2, 12, 4);
 		tableSlider = createSnapSlider(5, 15, 10);
 		courierSlider = createSnapSlider(1, 5, 3);
 
+		oven1Slider.setPrefWidth(160);
+		oven2Slider.setPrefWidth(160);
+		tableSlider.setPrefWidth(160);
+		courierSlider.setPrefWidth(160);
+
+		// Initialize the 4 spinners
+		spinOven1Time = createServiceTimeSpinner(10.0);
+		spinOven2Time = createServiceTimeSpinner(10.0);
+		spinTableTime = createServiceTimeSpinner(15.0);
+		spinCourierTime = createServiceTimeSpinner(15.0);
+
+		spinOven1Time.setPrefWidth(70);
+		spinOven2Time.setPrefWidth(70);
+		spinTableTime.setPrefWidth(70);
+		spinCourierTime.setPrefWidth(70);
+
+		// Group Slider and Spinner vertically using VBox
 		VBox stationBox = new VBox(6,
 				stationHeader,
-				createLabeledControl("Oven 1 Capacity", oven1Slider),
-				createLabeledControl("Oven 2 Capacity", oven2Slider),
-				createLabeledControl("Tables Capacity", tableSlider),
-				createLabeledControl("Couriers Capacity", courierSlider)
+				createLabeledControl("Oven 1 Cap & Time", new HBox(5, oven1Slider, spinOven1Time)),
+				createLabeledControl("Oven 2 Cap & Time", new HBox(5, oven2Slider, spinOven2Time)),
+				createLabeledControl("Tables Cap & Time", new HBox(5, tableSlider, spinTableTime)),
+				createLabeledControl("Couriers Cap & Time", new HBox(5, courierSlider, spinCourierTime))
 		);
 
 		// --- SECTION 2: CUSTOMERS & DEMOGRAPHICS ---
@@ -252,8 +273,8 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		// --- SECTION 3: TIME & EXECUTION CONTROLS ---
 		Label execHeader = createSectionHeader("Time & Execution");
 
-		time = new TextField("1000");
-		delay = new TextField("100");
+		time = new TextField("100");
+		delay = new TextField("1000");		// These are close to real-life timestamps
 
 		startButton = new Button("Start Simulation");
 		startButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;");
@@ -328,11 +349,15 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 				execBox
 		);
 
+		presetComboBox.setValue(PresetConfig.DEFAULT);
+		controller.applyPresetToUI(PresetConfig.DEFAULT);
+
 		ScrollPane scrollPane = new ScrollPane(panel);
 		scrollPane.setFitToWidth(true);
 		scrollPane.setFitToHeight(true);
 		return new VBox(scrollPane);
 	}
+
 
 	// -------------------------------------------------------------------------
 	// RIGHT STATISTICS SIDEBAR LAYOUT
@@ -409,6 +434,11 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		TableColumn<SimulationRun, Double> colOven2 = new TableColumn<>("Oven 2 Util (%)");
 		colOven2.setCellValueFactory(new PropertyValueFactory<>("oven2Utilization"));
 
+		formatDoubleColumn(colTime);
+		formatDoubleColumn(colAvgStay);
+		formatDoubleColumn(colOven1);
+		formatDoubleColumn(colOven2);
+
 		table.getColumns().addAll(
 				colId, colTime, colCustomers, colAvgStay,
 				colDineIn, colTakeaway, colOnline, colOven1, colOven2
@@ -441,6 +471,12 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		return label;
 	}
 
+	private VBox createLabeledControl(String labelText, javafx.scene.Node control) {
+		Label label = new Label(labelText);
+		label.setFont(Font.font("Tahoma", FontWeight.NORMAL, 11));
+		return new VBox(2, label, control);
+	}
+
 	private VBox createLabeledControl(String labelText, Control control) {
 		Label label = new Label(labelText);
 		label.setFont(Font.font("Tahoma", FontWeight.NORMAL, 11));
@@ -462,6 +498,27 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		slider.setMajorTickUnit(50);
 		slider.setShowTickMarks(true);
 		return slider;
+	}
+
+	private Spinner<Double> createServiceTimeSpinner(double defaultValue) {
+		Spinner<Double> spinner = new Spinner<>(1.0, 60.0, defaultValue, 0.5);
+		spinner.setEditable(true);
+		spinner.setPrefWidth(70);
+		return spinner;
+	}
+
+	private <T> void formatDoubleColumn(TableColumn<T, Double> column) {
+		column.setCellFactory(tc -> new TableCell<>() {
+			@Override
+			protected void updateItem(Double item, boolean empty) {
+				super.updateItem(item, empty);
+				if (empty || item == null) {
+					setText(null);
+				} else {
+					setText(String.format(java.util.Locale.US, "%.2f", item));
+				}
+			}
+		});
 	}
 
 	// -------------------------------------------------------------------------
@@ -515,6 +572,46 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 	@Override
 	public double getTakeawayWeight() {
 		return takeawayMixSlider.getValue();
+	}
+
+	@Override
+	public double getOven1ServiceTime() {
+		return spinOven1Time.getValue();
+	}
+
+	@Override
+	public double getOven2ServiceTime() {
+		return spinOven2Time.getValue();
+	}
+
+	@Override
+	public double getTableServiceTime() {
+		return spinTableTime.getValue();
+	}
+
+	@Override
+	public double getCourierServiceTime() {
+		return spinCourierTime.getValue();
+	}
+
+	@Override
+	public void setOven1ServiceTime(double time) {
+		if (spinOven1Time != null) spinOven1Time.getValueFactory().setValue(time);
+	}
+
+	@Override
+	public void setOven2ServiceTime(double time) {
+		if (spinOven2Time != null) spinOven2Time.getValueFactory().setValue(time);
+	}
+
+	@Override
+	public void setTableServiceTime(double time) {
+		if (spinTableTime != null) spinTableTime.getValueFactory().setValue(time);
+	}
+
+	@Override
+	public void setCourierServiceTime(double time) {
+		if (spinCourierTime != null) spinCourierTime.getValueFactory().setValue(time);
 	}
 
 	@Override
