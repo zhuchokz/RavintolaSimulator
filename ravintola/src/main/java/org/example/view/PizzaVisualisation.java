@@ -76,7 +76,7 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         super(w, h);
         gc = this.getGraphicsContext2D();
         try {
-            URL imageUrl = PizzaVisualisation.class.getResource("/pizzeria3.png");
+            URL imageUrl = PizzaVisualisation.class.getResource("/pizzeria.png");
             if (imageUrl != null) {
                 backgroundImage = new Image(imageUrl.toExternalForm());
                 System.out.println("The pizzeria background has been successfully loaded.");
