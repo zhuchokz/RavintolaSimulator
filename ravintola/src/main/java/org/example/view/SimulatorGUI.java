@@ -89,18 +89,35 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 				System.exit(0);
 			});
 
-			// 1. Build components
 			VBox parameterSidebar = createParameterSidebar();
 			VBox statsSidebar = createStatsSidebar();
 			display = new PizzaVisualisation(1020, 650);
+			Canvas canvas = (Canvas) display;
 
-			// 2. Root Layout (Left: Sidebar, Center: Canvas, Right: Stats)
-			HBox mainLayout = new HBox(15);
-			mainLayout.setStyle("-fx-border-color: #aeaeae; -fx-border-width: 3; -fx-border-style: solid;");
+			javafx.scene.layout.GridPane mainLayout = new javafx.scene.layout.GridPane();
+			mainLayout.setHgap(10); // Заменяет spacing в HBox
 			mainLayout.setPadding(new Insets(10));
-			mainLayout.getChildren().addAll(parameterSidebar, (Canvas) display, statsSidebar);
+			mainLayout.setStyle("-fx-border-color: #aeaeae; -fx-border-width: 3; -fx-border-style: solid;");
 
-			Scene scene = new Scene(mainLayout);
+			mainLayout.add(parameterSidebar, 0, 0);
+			mainLayout.add(canvas, 1, 0);
+			mainLayout.add(statsSidebar, 2, 0);
+
+			javafx.scene.layout.ColumnConstraints col1 = new javafx.scene.layout.ColumnConstraints();
+			col1.setPercentWidth(18);
+
+			javafx.scene.layout.ColumnConstraints col2 = new javafx.scene.layout.ColumnConstraints();
+			col2.setPercentWidth(64);
+
+			javafx.scene.layout.ColumnConstraints col3 = new javafx.scene.layout.ColumnConstraints();
+			col3.setPercentWidth(18);
+
+			mainLayout.getColumnConstraints().addAll(col1, col2, col3);
+
+			canvas.widthProperty().bind(mainLayout.widthProperty().multiply(0.64).subtract(20));
+			canvas.heightProperty().bind(mainLayout.heightProperty().subtract(26));
+
+			Scene scene = new Scene(mainLayout,1200, 750);
 			String cssData =
 					".label { -fx-font-family: 'Comic Sans MS'; -fx-text-fill: #4a3b52; }\n" +
 
