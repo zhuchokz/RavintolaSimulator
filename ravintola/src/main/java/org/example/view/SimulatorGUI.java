@@ -92,7 +92,7 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 			// 1. Build components
 			VBox parameterSidebar = createParameterSidebar();
 			VBox statsSidebar = createStatsSidebar();
-			display = new PizzaVisualisation(1242, 700);
+			display = new PizzaVisualisation(1200, 700);
 
 			// 2. Root Layout (Left: Sidebar, Center: Canvas, Right: Stats)
 			HBox mainLayout = new HBox(15);
@@ -128,7 +128,7 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 			String encodedCss = "data:text/css," + cssData.replace(" ", "%20").replace("\n", "%0A");
 			scene.getStylesheets().add(encodedCss);
 			primaryStage.setScene(scene);
-			primaryStage.setResizable(false);
+			primaryStage.setResizable(true);
 			primaryStage.show();
 
 		} catch (Exception e) {
