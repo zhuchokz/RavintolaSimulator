@@ -466,15 +466,28 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
                     }
                     clearDisplay();
 
+                    double scaleX = getWidth() / 1242.0;
+                    double scaleY = getHeight() / 700.0;
+
+                    double spriteScale = Math.min(scaleX, scaleY);
+                    double spriteSize = 24 * spriteScale;
+                    double offset = spriteSize / 2;
+
                     for (CustomerSprite c : customers.values()) {
+                        double renderX = c.x * scaleX;
+                        double renderY = c.y * scaleY;
+
                         if (c.characterImage != null) {
-                            gc.drawImage(c.characterImage, c.x - 12, c.y - 12, 24, 24);
+                            gc.drawImage(c.characterImage, renderX - offset, renderY - offset, spriteSize, spriteSize);
                         } else {
+                            double circleRadius = 7 * spriteScale;
+                            double circleDiameter = circleRadius * 2;
+
                             gc.setFill(c.color);
-                            gc.fillOval(c.x - 7, c.y - 7, 14, 14);
+                            gc.fillOval(renderX - circleRadius, renderY - circleRadius, circleDiameter, circleDiameter);
                             gc.setStroke(Color.BLACK);
                             gc.setLineWidth(1);
-                            gc.strokeOval(c.x - 7, c.y - 7, 14, 14);
+                            gc.strokeOval(renderX - circleRadius, renderY - circleRadius, circleDiameter, circleDiameter);
                         }
                     }
                 });
@@ -483,6 +496,7 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         animationThread.setDaemon(true);
         animationThread.start();
     }
+
 
     /**
      * Internal container class representing an animated customer sprite on the canvas.

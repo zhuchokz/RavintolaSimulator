@@ -92,7 +92,7 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 			// 1. Build components
 			VBox parameterSidebar = createParameterSidebar();
 			VBox statsSidebar = createStatsSidebar();
-			display = new PizzaVisualisation(1200, 700);
+			display = new PizzaVisualisation(1020, 650);
 
 			// 2. Root Layout (Left: Sidebar, Center: Canvas, Right: Stats)
 			HBox mainLayout = new HBox(15);
