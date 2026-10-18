@@ -195,7 +195,7 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		);
 
 		// --- SECTION 1: STATIONS PARAMETERS ---
-		Label stationHeader = createSectionHeader("Station Capacities & Service Times (s)");
+		Label stationHeader = createSectionHeader("Capacity & Service Time");
 
 		oven1Slider = createSnapSlider(2, 12, 4);
 		oven2Slider = createSnapSlider(2, 12, 4);
@@ -380,7 +380,7 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 
 		statsTextArea.setEditable(false);
 		statsTextArea.setWrapText(true);
-		statsTextArea.setPrefHeight(450);
+		statsTextArea.setPrefHeight(650);
 		statsTextArea.setStyle("-fx-background-color: #8f5de4; -fx-border-color: #151515; -fx-border-width: 1;");
 
 		// History Button placed beneath the stats text area
