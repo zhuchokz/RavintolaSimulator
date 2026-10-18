@@ -7,8 +7,26 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Data Access Object (DAO) responsible for performing CRUD operations on the
+ * {@code customer_logs} database table in MariaDB.
+ * <p>
+ * Provides persistence and retrieval logic for individual customer metrics
+ * recorded during simulation runs, including entry/exit timestamps and total stay durations.
+ * </p>
+ *
+ * @author Daniel
+ * @version 2.0
+ */
 public class CustomerLogDAO {
 
+    /**
+     * Inserts a new customer log record into the database and assigns the auto-generated primary key ID back to the log object.
+     *
+     * @param log The {@link CustomerLog} entity containing individual customer timestamps and metrics.
+     * @return The auto-generated {@code log_id} primary key if insertion succeeds; {@code -1} if an error occurs.
+     */
     public int saveCustomerLog(CustomerLog log) {
 
         String sql = """
@@ -47,6 +65,13 @@ public class CustomerLogDAO {
         return -1;
     }
 
+
+    /**
+     * Retrieves all customer logs associated with a specific simulation run ID, ordered by customer ID.
+     *
+     * @param runId The unique identifier of the simulation run.
+     * @return A {@link List} of {@link CustomerLog} entities corresponding to the given run ID; empty list if none found.
+     */
     public List<CustomerLog> getLogsByRunId(int runId) {
 
         List<CustomerLog> logs = new ArrayList<>();
@@ -77,6 +102,13 @@ public class CustomerLogDAO {
         return logs;
     }
 
+
+    /**
+     * Retrieves a single customer log entry by its primary key ID.
+     *
+     * @param logId The unique primary key identifier of the customer log.
+     * @return The matching {@link CustomerLog} object if found; {@code null} otherwise.
+     */
     public CustomerLog getLogById(int logId) {
 
         String sql = """
@@ -104,6 +136,14 @@ public class CustomerLogDAO {
         return null;
     }
 
+
+    /**
+     * Maps the current row of an active SQL {@link ResultSet} to a new {@link CustomerLog} domain entity.
+     *
+     * @param result The active {@link ResultSet} positioned at the row to be mapped.
+     * @return A fully populated {@link CustomerLog} instance.
+     * @throws SQLException If an error occurs while accessing database column values.
+     */
     private CustomerLog mapResultSetToCustomerLog(ResultSet result)
             throws SQLException {
 

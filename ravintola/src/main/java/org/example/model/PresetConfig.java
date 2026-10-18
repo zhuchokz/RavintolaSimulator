@@ -1,5 +1,16 @@
 package org.example.model;
 
+
+/**
+ * Model entity representing a simulation parameter configuration preset stored in the {@code preset_configs} database table.
+ * <p>
+ * Encapsulates setup parameters including customer arrival mean, station resource capacities (ovens, dining tables, couriers),
+ * ordering probabilities, and average service durations across service points.
+ * </p>
+ *
+ * @author Daniel
+ * @version 1.0
+ */
 public class PresetConfig {
 
     private int configId;
@@ -15,9 +26,27 @@ public class PresetConfig {
     private double tableServiceTime;
     private double courierServiceTime;
 
+    /**
+     * Default no-argument constructor for Object-Relational Mapping (ORM) and manual instantiation.
+     */
     public PresetConfig() {
     }
 
+    /**
+     * Parameterized constructor for creating a new preset configuration entity prior to database insertion.
+     *
+     * @param configName         Unique descriptive label for the preset.
+     * @param arrivalMean        Mean inter-arrival time for arriving customers.
+     * @param oven1Capacity      Maximum parallel capacity for Oven 1.
+     * @param oven2Capacity      Maximum parallel capacity for Oven 2.
+     * @param tableCapacity      Maximum seating capacity for dining tables.
+     * @param courierCapacity    Maximum active couriers for delivery.
+     * @param drinkProbability   Probability of a customer purchasing a drink (0.0 to 1.0).
+     * @param oven1ServiceTime   Mean service duration for Oven 1.
+     * @param oven2ServiceTime   Mean service duration for Oven 2.
+     * @param tableServiceTime   Mean service duration for dining tables.
+     * @param courierServiceTime Mean service duration for delivery couriers.
+     */
     public PresetConfig(String configName,
                         double arrivalMean,
                         int oven1Capacity,
@@ -43,6 +72,9 @@ public class PresetConfig {
         this.courierServiceTime = courierServiceTime;
     }
 
+    /**
+     * Pre-configured default parameter preset instance for quick initialization of the pizzeria simulation.
+     */
     public static final PresetConfig DEFAULT = new PresetConfig(
             "Default",
             5.0,   // arrival mean (Normal 5.0s)

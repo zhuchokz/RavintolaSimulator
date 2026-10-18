@@ -12,23 +12,52 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+/**
+ * Main simulation engine implementation extending the discrete-event {@link Engine} framework.
+ * <p>
+ * Coordinates workstation service points, manages customer routing paths based on ordering channel types
+ * (dine-in, takeaway, online), processes discrete state transitions, controls execution flow (pause, resume, stop),
+ * and compiles final performance statistics for GUI visualization and database storage.
+ * </p>
+ *
+ * @author Illia, Niklas
+ * @version 1.0
+ */
 public class MyEngine extends Engine {
+    /** Stochastic arrival process responsible for generating customer arrivals into the pizzeria. */
     private ArrivalProcess arrivalProcess;
 
+    /** Service point workstation handling order placement. */
     private ServicePoint orderPoint;
+    /** Service point workstation handling customer payment. */
     private ServicePoint payPoint;
+    /** Service point workstation representing in-house dining tables. */
     private ServicePoint tablePoint;
+    /** Service point workstation handling drink retrieval. */
     private ServicePoint drinkPoint;
+    /** Primary pizza baking oven service point. */
     private ServicePoint oven1;
+    /** Secondary pizza baking oven service point. */
     private ServicePoint oven2;
+    /** Service point workstation handling order pickup. */
     private ServicePoint pickupPoint;
+    /** Service point workstation handling courier dispatch for delivery. */
     private ServicePoint courierPoint;
 
+    /** Flag indicating whether simulation thread execution is currently paused. */
     private volatile boolean paused = false;
+    /** Flag indicating whether the simulation execution thread has been terminated. */
     private volatile boolean stopped = false;
 
+    /** In-memory log collection recording completed customer stay durations for post-run persistence. */
     private List<CustomerLog> finishedCustomerLogs = new ArrayList<>();
 
+
+    /**
+     * Constructs and initializes the simulation engine with default service stations and arrival schedules.
+     *
+     * @param controller Link to the controller interface {@link IControllerMtoV} for visual updates and data transmission.
+     */
     public MyEngine(IControllerMtoV controller) {
         super(controller);
 
@@ -51,6 +80,9 @@ public class MyEngine extends Engine {
         this.setDelay(500);
     }
 
+    /**
+     * Resets simulation clock time, customer sequence counters, and schedules the initial arrival event.
+     */
     @Override
     protected void initialization() {
         Customer.reset(); // resets after each restart of simulation
@@ -58,6 +90,14 @@ public class MyEngine extends Engine {
         arrivalProcess.generateNext();     // First arrival in the system
     }
 
+    /**
+     * Configures workstation parallel capacities for ovens, dining tables, and couriers.
+     *
+     * @param o1Cap      Capacity threshold for Oven 1.
+     * @param o2Cap      Capacity threshold for Oven 2.
+     * @param tableCap   Seating capacity for dining tables.
+     * @param courierCap Active courier dispatch capacity.
+     */
     public void setStationCapacities(int o1Cap, int o2Cap, int tableCap, int courierCap) {
         oven1.setCapacity(o1Cap);
         oven2.setCapacity(o2Cap);
@@ -65,6 +105,14 @@ public class MyEngine extends Engine {
         courierPoint.setCapacity(courierCap);
     }
 
+    /**
+     * Re-initializes service point mean durations for ovens, tables, and couriers based on custom parameters.
+     *
+     * @param o1Time      Mean service time for Oven 1.
+     * @param o2Time      Mean service time for Oven 2.
+     * @param tableTime   Mean service time for dining tables.
+     * @param courierTime Mean service time for delivery couriers.
+     */
     public void setServiceTimes(double o1Time, double o2Time, double tableTime, double courierTime) {
         int o1Cap = oven1.getCapacity();
         int o2Cap = oven2.getCapacity();
@@ -83,6 +131,11 @@ public class MyEngine extends Engine {
         };
     }
 
+    /**
+     * Configures customer mean inter-arrival interval pace using exponential distributions.
+     *
+     * @param pace Descriptive pace string (e.g., "Fast (2.5s)", "Slow (10s)", or default).
+     */
     public void setArrivalPace(String pace) {
         double meanInterval = 5.0; // Default Normal
         if ("Fast (2.5s)".equals(pace)) {
@@ -93,14 +146,28 @@ public class MyEngine extends Engine {
         arrivalProcess = new ArrivalProcess(new Negexp(meanInterval, 2), eventList, EventType.ARR);
     }
 
+    /**
+     * Toggles the simulation thread pause state.
+     */
     public void togglePause() {
         this.paused = !this.paused;
     }
 
+    /**
+     * Checks if the simulation engine execution is currently paused.
+     *
+     * @return {@code true} if paused; {@code false} otherwise.
+     */
     public boolean isPaused() {
         return paused;
     }
 
+    /**
+     * Determines optimal oven routing by choosing an available oven or selecting the shorter queue.
+     *
+     * @param c The {@link Customer} requiring oven allocation.
+     * @return String label indicating destination oven ("OVEN1" or "OVEN2").
+     */
     private String routeToOven(Customer c) {
         if (!oven1.isReserved()) {
             oven1.addQueue(c); // Put in Oven 1 if it has space
@@ -120,6 +187,11 @@ public class MyEngine extends Engine {
         }
     }
 
+    /**
+     * Executes discrete-event state transitions for B-phase events according to simulation business rules.
+     *
+     * @param t The discrete {@link Event} scheduled for execution.
+     */
     @Override
     protected void runEvent(Event t) {  // B phase events
         Customer customer;
@@ -207,6 +279,11 @@ public class MyEngine extends Engine {
         }
     }
 
+    /**
+     * Finalizes customer processing upon departure, logs metrics, and triggers UI updates.
+     *
+     * @param c The departing {@link Customer} instance.
+     */
     private void finishCustomer(Customer c) {
         c.setRemovalTime(Clock.getInstance().getTime());
         c.reportResults();
@@ -219,30 +296,59 @@ public class MyEngine extends Engine {
         controller.visualiseCustomer(c.getId(), c.getType(), "FINISHED");
     }
 
+    /**
+     * Halts simulation execution thread and resets run duration parameters.
+     */
     public void stopSimulation() {
         this.stopped = true;
         this.paused = false;
         setSimulationTime(0);
     }
 
+    /**
+     * Logs completed customer metrics into an in-memory collection prior to database persistence.
+     *
+     * @param customerId  Unique customer identifier.
+     * @param customerType Category type string.
+     * @param arrivalTime Arrival timestamp.
+     * @param exitTime    Departure timestamp.
+     */
     public void logCompletedCustomer(int customerId, String customerType, double arrivalTime, double exitTime) {
         double totalStayTime = exitTime - arrivalTime;
         CustomerLog log = new CustomerLog(0, customerId, customerType, arrivalTime, exitTime, totalStayTime);
         finishedCustomerLogs.add(log);
     }
 
+    /**
+     * Retrieves the collection of customer log records recorded during the current run.
+     *
+     * @return A {@link List} of {@link CustomerLog} entities.
+     */
     public List<CustomerLog> getFinishedCustomerLogs() {
         return finishedCustomerLogs;
     }
 
+    /**
+     * Calculates the station utilization rate for Oven 1.
+     *
+     * @return Oven 1 utilization percentage/rate.
+     */
     public double getOven1Utilization() {
         return oven1.getUtilization();
     }
 
+    /**
+     * Calculates the station utilization rate for Oven 2.
+     *
+     * @return Oven 2 utilization percentage/rate.
+     */
     public double getOven2Utilization() {
         return oven2.getUtilization();
     }
 
+    /**
+     * Compiles final workstation performance statistics, updates the JavaFX UI, and triggers database persistence.
+     */
     @Override
     protected void results() {
         double totalTime = Clock.getInstance().getTime();

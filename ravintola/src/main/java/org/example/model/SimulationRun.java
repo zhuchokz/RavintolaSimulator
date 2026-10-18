@@ -1,5 +1,16 @@
 package org.example.model;
 
+
+/**
+ * Model entity representing an overall simulation run summary record stored in the {@code simulation_runs} database table.
+ * <p>
+ * Encapsulates high-level performance metrics recorded upon simulation completion, including total execution duration,
+ * customer volume breakdown (takeaway, dine-in, online), average customer stay duration, and resource utilization rates.
+ * </p>
+ *
+ * @author Daniel
+ * @version 1.0
+ */
 public class SimulationRun {
 
     private int runId;
@@ -12,9 +23,24 @@ public class SimulationRun {
     private double oven1Utilization;
     private double oven2Utilization;
 
+    /**
+     * Default no-argument constructor for Object-Relational Mapping (ORM) and manual instantiation.
+     */
     public SimulationRun() {
     }
 
+    /**
+     * Parameterized constructor for instantiating a new simulation run entity prior to database insertion.
+     *
+     * @param simulationTime   Total time duration of the simulation run.
+     * @param totalCustomers   Total number of processed customers.
+     * @param averageStayTime  Average duration spent by customers in the system.
+     * @param takeawayCount    Total takeaway customer count.
+     * @param dineinCount      Total dine-in customer count.
+     * @param onlineCount      Total online delivery customer count.
+     * @param oven1Utilization Station utilization rate for Oven 1.
+     * @param oven2Utilization Station utilization rate for Oven 2.
+     */
     public SimulationRun(double simulationTime,
                          int totalCustomers,
                          double averageStayTime,

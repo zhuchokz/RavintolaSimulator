@@ -26,8 +26,21 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.Priority;
 import javafx.scene.image.Image;
 
+
+/**
+ * Main JavaFX GUI application class for the pizzeria simulation, implementing {@link ISimulatorUI}.
+ * <p>
+ * Renders the primary user interface consisting of interactive parameter configuration sidebars,
+ * dynamic animation canvas visualization, execution control buttons, live performance metrics displays,
+ * and database historical run logs table dialogs.
+ * </p>
+ *
+ * @author Anja, Illia
+ * @version 1.0
+ */
 public class SimulatorGUI extends Application implements ISimulatorUI {
 
+	/** Presenter/Controller reference interface {@link IControllerVtoM} connecting view interactions to model logic. */
 	private IControllerVtoM controller;
 
 	private TextField time;
@@ -52,12 +65,20 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 
 	private Spinner<Double> spinOven1Time, spinOven2Time, spinTableTime, spinCourierTime;
 
+	/**
+	 * Initializes background framework configurations and instantiates the presenter controller.
+	 */
 	@Override
 	public void init() {
 		Trace.setTraceLevel(Level.INFO);
 		controller = new Controller(this);
 	}
 
+	/**
+	 * Constructs and displays the primary JavaFX application window, scene graphs, custom CSS styling, and layouts.
+	 *
+	 * @param primaryStage Primary stage window container provided by the JavaFX runtime.
+	 */
 	@Override
 	public void start(Stage primaryStage) {
 		try {
@@ -115,6 +136,11 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		}
 	}
 
+	/**
+	 * Constructs the left-hand parameters input sidebar container containing preset, station, customer, and execution controls.
+	 *
+	 * @return Formatted {@link VBox} container node.
+	 */
 	private VBox createParameterSidebar() {
 		VBox panel = new VBox(12);
 		panel.setPadding(new Insets(10));
@@ -358,10 +384,11 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		return new VBox(scrollPane);
 	}
 
-
-	// -------------------------------------------------------------------------
-	// RIGHT STATISTICS SIDEBAR LAYOUT
-	// -------------------------------------------------------------------------
+	/**
+	 * Constructs the right-hand statistics sidebar container housing real-time metrics, log outputs, and history triggers.
+	 *
+	 * @return Formatted {@link VBox} container node.
+	 */
 	private VBox createStatsSidebar() {
 		VBox statsBox = new VBox(10);
 		statsBox.setPrefWidth(220);
@@ -399,6 +426,9 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		return statsBox;
 	}
 
+	/**
+	 * Opens a new modal window displaying historical simulation runs stored in the database within a {@link TableView}.
+	 */
 	public void openHistoryWindow() {
 		Stage historyStage = new Stage();
 		historyStage.setTitle("Simulation Run History");
@@ -462,27 +492,53 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		historyStage.show();
 	}
 
-	// -------------------------------------------------------------------------
-	// HELPER CREATORS
-	// -------------------------------------------------------------------------
+
+	/**
+	 * Creates a standardized bold section header label.
+	 *
+	 * @param title Header text string to display.
+	 * @return Formatted section header {@link Label}.
+	 */
 	private Label createSectionHeader(String title) {
 		Label label = new Label(title);
 		label.setFont(Font.font("Tahoma", FontWeight.BOLD, 13));
 		return label;
 	}
 
+	/**
+	 * Wraps a generic UI node with a descriptive label in a vertical box container.
+	 *
+	 * @param labelText Descriptive label text.
+	 * @param control   Child control node.
+	 * @return Grouped {@link VBox} container.
+	 */
 	private VBox createLabeledControl(String labelText, javafx.scene.Node control) {
 		Label label = new Label(labelText);
 		label.setFont(Font.font("Tahoma", FontWeight.NORMAL, 11));
 		return new VBox(2, label, control);
 	}
 
+	/**
+	 * Wraps a UI control with a descriptive label in a vertical box container.
+	 *
+	 * @param labelText Descriptive label text.
+	 * @param control   Child control component.
+	 * @return Grouped {@link VBox} container.
+	 */
 	private VBox createLabeledControl(String labelText, Control control) {
 		Label label = new Label(labelText);
 		label.setFont(Font.font("Tahoma", FontWeight.NORMAL, 11));
 		return new VBox(2, label, control);
 	}
 
+	/**
+	 * Constructs a tick-snapping slider for integer capacity inputs.
+	 *
+	 * @param min   Minimum slider threshold value.
+	 * @param max   Maximum slider threshold value.
+	 * @param value Default initial value.
+	 * @return Configured {@link Slider} instance.
+	 */
 	private Slider createSnapSlider(double min, double max, double value) {
 		Slider slider = new Slider(min, max, value);
 		slider.setMajorTickUnit(1);
@@ -493,6 +549,12 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		return slider;
 	}
 
+	/**
+	 * Constructs a percentage mix slider for customer demographic weighting.
+	 *
+	 * @param defaultValue Default initial ratio percentage value.
+	 * @return Configured {@link Slider} instance.
+	 */
 	private Slider createMixSlider(double defaultValue) {
 		Slider slider = new Slider(0, 100, defaultValue);
 		slider.setMajorTickUnit(50);
@@ -500,6 +562,12 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		return slider;
 	}
 
+	/**
+	 * Constructs a numerical spinner control for workstation service duration inputs.
+	 *
+	 * @param defaultValue Default initial mean service duration value.
+	 * @return Configured {@link Spinner} instance.
+	 */
 	private Spinner<Double> createServiceTimeSpinner(double defaultValue) {
 		Spinner<Double> spinner = new Spinner<>(1.0, 60.0, defaultValue, 0.5);
 		spinner.setEditable(true);
@@ -507,6 +575,12 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		return spinner;
 	}
 
+	/**
+	 * Applies custom decimal formatting (2 decimal places) to floating-point table view columns.
+	 *
+	 * @param <T>    Generic table model entity type.
+	 * @param column Target table column to format.
+	 */
 	private <T> void formatDoubleColumn(TableColumn<T, Double> column) {
 		column.setCellFactory(tc -> new TableCell<>() {
 			@Override
@@ -521,109 +595,210 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		});
 	}
 
-	// -------------------------------------------------------------------------
-	// ISimulatorUI INTERFACE IMPLEMENTATION
-	// -------------------------------------------------------------------------
+
+	/**
+	 * Gets target simulation duration from input text fields.
+	 *
+	 * @return Double simulation time value.
+	 */
 	@Override
 	public double getTime() {
 		return Double.parseDouble(time.getText());
 	}
 
+	/**
+	 * Gets execution step delay in milliseconds from input text fields.
+	 *
+	 * @return Long millisecond delay value.
+	 */
 	@Override
 	public long getDelay() {
 		return Long.parseLong(delay.getText());
 	}
 
+	/**
+	 * Gets drink selection probability ratio from the UI slider.
+	 *
+	 * @return Double probability threshold (0.0 to 1.0).
+	 */
 	@Override
 	public double getDrinkProbability() {
 		return drinkProbabilitySlider.getValue() / 100.0;
 	}
 
+	/**
+	 * Gets Oven 1 parallel capacity setting.
+	 *
+	 * @return Oven 1 capacity limit.
+	 */
 	@Override
 	public int getOven1Capacity() {
 		return (int) oven1Slider.getValue();
 	}
 
+	/**
+	 * Gets Oven 2 parallel capacity setting.
+	 *
+	 * @return Oven 2 capacity limit.
+	 */
 	@Override
 	public int getOven2Capacity() {
 		return (int) oven2Slider.getValue();
 	}
 
+	/**
+	 * Gets dining tables seating capacity setting.
+	 *
+	 * @return Tables seating capacity limit.
+	 */
 	@Override
 	public int getTableCapacity() {
 		return (int) tableSlider.getValue();
 	}
 
+	/**
+	 * Gets delivery courier active capacity setting.
+	 *
+	 * @return Courier capacity limit.
+	 */
 	@Override
 	public int getCourierCapacity() {
 		return (int) courierSlider.getValue();
 	}
 
+	/**
+	 * Gets selected arrival pace configuration label string.
+	 *
+	 * @return Arrival pace selection string.
+	 */
 	@Override
 	public String getArrivalPace() {
 		return paceChoiceBox.getValue();
 	}
 
+	/**
+	 * Gets relative dine-in customer distribution weight.
+	 *
+	 * @return Dine-in weight ratio.
+	 */
 	@Override
 	public double getDineInWeight() {
 		return dineInMixSlider.getValue();
 	}
 
+	/**
+	 * Gets relative takeaway customer distribution weight.
+	 *
+	 * @return Takeaway weight ratio.
+	 */
 	@Override
 	public double getTakeawayWeight() {
 		return takeawayMixSlider.getValue();
 	}
 
+	/**
+	 * Gets mean service duration value for Oven 1.
+	 *
+	 * @return Oven 1 mean service time.
+	 */
 	@Override
 	public double getOven1ServiceTime() {
 		return spinOven1Time.getValue();
 	}
 
+	/**
+	 * Gets mean service duration value for Oven 2.
+	 *
+	 * @return Oven 2 mean service time.
+	 */
 	@Override
 	public double getOven2ServiceTime() {
 		return spinOven2Time.getValue();
 	}
 
+	/**
+	 * Gets mean service duration value for dining tables.
+	 *
+	 * @return Tables mean service time.
+	 */
 	@Override
 	public double getTableServiceTime() {
 		return spinTableTime.getValue();
 	}
 
+	/**
+	 * Gets mean service duration value for delivery couriers.
+	 *
+	 * @return Courier mean service time.
+	 */
 	@Override
 	public double getCourierServiceTime() {
 		return spinCourierTime.getValue();
 	}
 
+	/**
+	 * Sets Oven 1 service duration spinner input value.
+	 *
+	 * @param time Service duration value to set.
+	 */
 	@Override
 	public void setOven1ServiceTime(double time) {
 		if (spinOven1Time != null) spinOven1Time.getValueFactory().setValue(time);
 	}
 
+	/**
+	 * Sets Oven 2 service duration spinner input value.
+	 *
+	 * @param time Service duration value to set.
+	 */
 	@Override
 	public void setOven2ServiceTime(double time) {
 		if (spinOven2Time != null) spinOven2Time.getValueFactory().setValue(time);
 	}
 
+	/**
+	 * Sets dining tables service duration spinner input value.
+	 *
+	 * @param time Service duration value to set.
+	 */
 	@Override
 	public void setTableServiceTime(double time) {
 		if (spinTableTime != null) spinTableTime.getValueFactory().setValue(time);
 	}
 
+	/**
+	 * Sets delivery couriers service duration spinner input value.
+	 *
+	 * @param time Service duration value to set.
+	 */
 	@Override
 	public void setCourierServiceTime(double time) {
 		if (spinCourierTime != null) spinCourierTime.getValueFactory().setValue(time);
 	}
 
+	/**
+	 * Gets relative online delivery customer distribution weight.
+	 *
+	 * @return Online delivery weight ratio.
+	 */
 	@Override
 	public double getOnlineWeight() {
 		return onlineMixSlider.getValue();
 	}
 
+	/**
+	 * Retrieves the canvas visualization component reference.
+	 *
+	 * @return The active {@link IVisualisation} canvas component.
+	 */
 	@Override
 	public IVisualisation getVisualisation() {
 		return display;
 	}
 
+	/**
+	 * Resets execution control buttons back to initial idle states upon simulation end or stop.
+	 */
 	private void resetControlButtons() {
 		startButton.setText("Start Simulation");
 		startButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;");
@@ -633,6 +808,11 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		pauseButton.setStyle("-fx-background-color: #ff9800; -fx-text-fill: white; -fx-font-weight: bold;");
 	}
 
+	/**
+	 * Formats and updates the total execution duration output label upon simulation finish.
+	 *
+	 * @param time Final elapsed simulation time.
+	 */
 	@Override
 	public void setEndingTime(double time) {
 		DecimalFormat formatter = new DecimalFormat("#0.00");
@@ -642,63 +822,117 @@ public class SimulatorGUI extends Application implements ISimulatorUI {
 		});
 	}
 
+	/**
+	 * Increments active customer count tracking inside the system and refreshes UI labels.
+	 */
 	public void incrementCustomerCount() {
 		totalCustomersCount++;
 		updateStatisticsUI();
 	}
 
+	/**
+	 * Decrements active customer count tracking inside the system and refreshes UI labels.
+	 */
 	public void decrementCustomerCount() {
 		totalCustomersCount--;
 		updateStatisticsUI();
 	}
 
+	/**
+	 * Refreshes active customer count display label text.
+	 */
 	private void updateStatisticsUI() {
 		customerCountLabel.setText("Customers inside: " + totalCustomersCount);
 	}
 
+	/**
+	 * Appends an event text message line to the right sidebar statistics text area.
+	 *
+	 * @param text Message line text to append.
+	 */
 	public void logEvent(String text) {
 		if (statsTextArea != null) {
 			statsTextArea.appendText(text + "\n");
 		}
 	}
 
+	/**
+	 * Sets full report text into the right sidebar statistics text area.
+	 *
+	 * @param resultsText Complete formatted performance report string.
+	 */
 	public void displayResults(String resultsText) {
 		if (statsTextArea != null) {
 			statsTextArea.setText(resultsText);
 		}
 	}
 
+	/**
+	 * Sets drink probability slider position converted to percentage scale.
+	 *
+	 * @param value Decimal probability threshold (0.0 to 1.0).
+	 */
 	@Override
 	public void setDrinkProbability(double value) {
 		// Converts decimal probability (e.g., 0.50) to slider scale (0 - 100)
 		drinkProbabilitySlider.setValue(value <= 1.0 ? value * 100.0 : value);
 	}
 
+	/**
+	 * Sets Oven 1 capacity slider position.
+	 *
+	 * @param capacity Oven 1 capacity limit to set.
+	 */
 	@Override
 	public void setOven1Capacity(int capacity) {
 		oven1Slider.setValue(capacity);
 	}
 
+	/**
+	 * Sets Oven 2 capacity slider position.
+	 *
+	 * @param capacity Oven 2 capacity limit to set.
+	 */
 	@Override
 	public void setOven2Capacity(int capacity) {
 		oven2Slider.setValue(capacity);
 	}
 
+	/**
+	 * Sets dining tables capacity slider position.
+	 *
+	 * @param capacity Tables seating capacity limit to set.
+	 */
 	@Override
 	public void setTableCapacity(int capacity) {
 		tableSlider.setValue(capacity);
 	}
 
+	/**
+	 * Sets delivery courier capacity slider position.
+	 *
+	 * @param capacity Courier capacity limit to set.
+	 */
 	@Override
 	public void setCourierCapacity(int capacity) {
 		courierSlider.setValue(capacity);
 	}
 
+	/**
+	 * Sets customer arrival pace choice box selection.
+	 *
+	 * @param pace Arrival pace descriptive string to set.
+	 */
 	@Override
 	public void setArrivalPace(String pace) {
 		paceChoiceBox.setValue(pace);
 	}
 
+	/**
+	 * Application entry point launching the JavaFX runtime framework.
+	 *
+	 * @param args Command-line arguments.
+	 */
 	public static void main(String[] args) {
 		launch(args);
 	}

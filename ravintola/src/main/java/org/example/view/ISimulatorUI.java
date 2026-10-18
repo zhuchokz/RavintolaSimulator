@@ -1,5 +1,16 @@
 package org.example.view;
 
+/**
+ * Interface defining the user interface contract for the pizzeria simulation.
+ * <p>
+ * Provides abstract getter and setter methods for retrieving user configuration inputs
+ * (simulation duration, delay, workstation capacities, service durations, and customer distribution weights)
+ * and delivering engine simulation results back to the GUI view layer.
+ * </p>
+ *
+ * @author Anja, Illia
+ * @version 3.0
+ */
 public interface ISimulatorUI {
 	// The Controller needs input which is passed to the Engine
 	public double getTime();

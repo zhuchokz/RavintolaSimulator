@@ -7,8 +7,26 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Data Access Object (DAO) responsible for performing CRUD operations on the
+ * {@code preset_configs} database table in MariaDB.
+ * <p>
+ * Allows saving, retrieving, updating, and deleting pre-configured simulation parameters
+ * (station capacities, mean arrival rates, and service durations).
+ * </p>
+ *
+ * @author Daniel
+ * @version 2.0
+ */
 public class PresetConfigDAO {
 
+    /**
+     * Inserts a new simulation parameter preset into the database and sets the generated primary key ID.
+     *
+     * @param config The {@link PresetConfig} object containing the input configuration parameters.
+     * @return The auto-generated {@code config_id} primary key if successful; {@code -1} if saving fails.
+     */
     public int savePreset(PresetConfig config) {
 
         String sql = "INSERT INTO preset_configs (config_name, arrival_mean, oven1_capacity, oven2_capacity, " +
@@ -50,6 +68,12 @@ public class PresetConfigDAO {
         return -1;
     }
 
+
+    /**
+     * Retrieves all saved simulation parameter presets from the database, sorted alphabetically by configuration name.
+     *
+     * @return A {@link List} of all {@link PresetConfig} instances stored in MariaDB; empty list if none found.
+     */
     public List<PresetConfig> getAllPresets() {
 
         List<PresetConfig> configs = new ArrayList<>();
@@ -75,6 +99,13 @@ public class PresetConfigDAO {
         return configs;
     }
 
+
+    /**
+     * Retrieves a specific configuration preset by its primary key ID.
+     *
+     * @param configId The unique primary key identifier of the preset.
+     * @return The matching {@link PresetConfig} object if found; {@code null} otherwise.
+     */
     public PresetConfig getPresetById(int configId) {
 
         String sql = """
@@ -102,6 +133,12 @@ public class PresetConfigDAO {
         return null;
     }
 
+
+    /**
+     * Updates all parameter values of an existing configuration preset record in the database.
+     *
+     * @param config The {@link PresetConfig} entity containing updated values and a valid {@code configId}.
+     */
     public void updatePreset(PresetConfig config) {
 
         String sql = """
@@ -143,6 +180,12 @@ public class PresetConfigDAO {
         }
     }
 
+
+    /**
+     * Permanently removes a preset configuration record from the database by its primary key ID.
+     *
+     * @param configId The unique primary key identifier of the preset to delete.
+     */
     public void deletePreset(int configId) {
 
         String sql = """
@@ -161,6 +204,14 @@ public class PresetConfigDAO {
         }
     }
 
+
+    /**
+     * Maps the current row of an active SQL {@link ResultSet} to a new {@link PresetConfig} domain entity.
+     *
+     * @param result The active {@link ResultSet} positioned at the row to be mapped.
+     * @return A fully populated {@link PresetConfig} instance.
+     * @throws SQLException If an error occurs while reading column data from the result set.
+     */
     private PresetConfig mapResultSetToPresetConfig(ResultSet result)
             throws SQLException {
 

@@ -16,6 +16,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.InputStream;
 
+
+/**
+ * Custom JavaFX {@link Canvas} component rendering dynamic 2D animations of the pizzeria simulation.
+ * <p>
+ * Implements {@link IVisualisation} to visually move customer sprites along station path waypoints,
+ * manages sprite queuing logic for capacity-constrained service points (ovens, dining tables, couriers),
+ * handles image assets loading, and runs an asynchronous JavaFX UI animation thread.
+ * </p>
+ *
+ * @author Anja, Niklas, Illia
+ * @version 3.0
+ */
 public class PizzaVisualisation extends Canvas implements IVisualisation {
     private GraphicsContext gc;
     private Image backgroundImage;
@@ -72,6 +84,12 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
     private static final int[] POS_TAKEAWAY_EXIT = {1180, 260};
     private static final int[] POS_ONLINE_EXIT = {1180, 140};
 
+    /**
+     * Constructs a new simulation canvas with specified dimensions, loads sprite resources, and starts the animation loop.
+     *
+     * @param w Desired canvas width in pixels.
+     * @param h Desired canvas height in pixels.
+     */
     public PizzaVisualisation(int w, int h) {
         super(w, h);
         gc = this.getGraphicsContext2D();
@@ -99,6 +117,12 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         startAnimationLoop();
     }
 
+    /**
+     * Safely loads an image asset from the system resources directory.
+     *
+     * @param fileName File name of the resource image to load.
+     * @return The loaded {@link Image} object, or {@code null} if loading fails.
+     */
     private Image loadImage(String fileName) {
         String resourceName = "/" + fileName;
         try (InputStream imageStream = PizzaVisualisation.class.getResourceAsStream(resourceName)) {
@@ -111,6 +135,14 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         return null;
     }
 
+    /**
+     * Updates parallel workstation capacity thresholds for visual queue and seating management.
+     *
+     * @param o1Cap    Capacity limit for Oven 1.
+     * @param o2Cap    Capacity limit for Oven 2.
+     * @param tableCap Seating capacity limit for dining tables.
+     * @param courierCap Active capacity limit for delivery couriers.
+     */
     public void setStationCapacities(int o1Cap, int o2Cap, int tableCap, int courierCap) {
         this.oven1Capacity = o1Cap;
         this.oven2Capacity = o2Cap;
@@ -118,17 +150,28 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         this.courierCapacity = courierCap;
     }
 
+    /**
+     * Starts or resumes visual animation loop processing.
+     */
     @Override
     public void startVisuals() {
         this.isRunning = true;
         this.isPaused = false;
     }
 
+    /**
+     * Toggles animation playback pause state.
+     *
+     * @param paused {@code true} to pause sprite movements; {@code false} to resume.
+     */
     @Override
     public void setPaused(boolean paused) {
         this.isPaused = paused;
     }
 
+    /**
+     * Halts animation processing and clears all active customer sprites and queues from the canvas.
+     */
     @Override
     public void resetVisuals() {
         this.isRunning = false;
@@ -149,6 +192,11 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         });
     }
 
+    /**
+     * Scales sprite movement speed using the specified multiplier ratio.
+     *
+     * @param speedMultiplier Speed scaling multiplier.
+     */
     @Override
     public void adjustAnimationSpeed(double speedMultiplier) {
         Platform.runLater(() -> {
@@ -156,6 +204,9 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         });
     }
 
+    /**
+     * Clears canvas graphics context and redraws background floor plan or fallback background color.
+     */
     @Override
     public void clearDisplay() {
         if (backgroundImage != null) {
@@ -166,6 +217,11 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         }
     }
 
+    /**
+     * Releases an oven baking slot upon completion and advances the next waiting sprite in line.
+     *
+     * @param sprite The customer sprite finishing oven baking.
+     */
     private void freeOvenSlotAndAdvanceQueue(CustomerSprite sprite) {
         if (sprite.assignedOven == 1) {
             if (sprite.isBaking) {
@@ -192,6 +248,11 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         }
     }
 
+    /**
+     * Routes a dine-in customer sprite to table seating and optional drink fetching path waypoints.
+     *
+     * @param sprite The customer sprite transitioning to dine-in seating.
+     */
     private void routeCustomerToSeated(CustomerSprite sprite) {
         sprite.isSeated = true;
         sprite.addTarget(POS_DINEIN_DESCEND);
@@ -202,6 +263,13 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         }
     }
 
+    /**
+     * Updates or creates customer sprite movement waypoints based on state transition events.
+     *
+     * @param id     Unique customer identifier.
+     * @param type   Category type of customer.
+     * @param action Target workstation state label string.
+     */
     @Override
     public void visualiseCustomer(int id, CustomerType type, String action) {
         Platform.runLater(() -> {
@@ -350,6 +418,9 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         });
     }
 
+    /**
+     * Updates $(x, y)$ coordinate positions for all active sprites toward their next target waypoints.
+     */
     private void updateCustomerPositions() {
         for (Integer id : customers.keySet()) {
             CustomerSprite c = customers.get(id);
@@ -377,6 +448,9 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         }
     }
 
+    /**
+     * Launches a daemon thread executing a recurring animation loop to update and repaint sprites.
+     */
     private void startAnimationLoop() {
         Thread animationThread = new Thread(() -> {
             while (true) {
@@ -410,18 +484,38 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
         animationThread.start();
     }
 
+    /**
+     * Internal container class representing an animated customer sprite on the canvas.
+     */
     private static class CustomerSprite {
+        /** Current X and Y-coordinate canvas pixel position. */
         double x, y;
+        /** Queue of $[x, y]$ waypoint coordinate arrays defining movement paths. */
         Queue<int[]> targetPoints = new LinkedList<>();
+        /** Image graphic asset associated with this customer sprite. */
         Image characterImage;
+        /** Fallback color rendered when image assets are unavailable. */
         Color color;
+        /** Flag indicating whether the customer sprite is currently navigating toward an exit. */
         boolean isLeaving = false;
+        /** Flag indicating whether the customer sprite needs to visit the drink kiosk. */
         boolean wantsDrink = false;
+        /** Flag indicating whether the customer sprite is currently undergoing oven baking. */
         boolean isBaking = false;
+        /** Flag indicating whether the customer sprite is currently seated at a dining table. */
         boolean isSeated = false;
+        /** Flag indicating whether the customer sprite is currently undergoing courier dispatch. */
         boolean isAtCourier = false;
+        /** Numerical identifier indicating assigned oven station (1 or 2). */
         int assignedOven = 1;
 
+        /**
+         * Constructs a new customer sprite instance at the specified starting position.
+         *
+         * @param startPos Array containing starting $[x, y]$ canvas coordinates.
+         * @param image    Image graphic asset to represent the sprite.
+         * @param color    Fallback color if image rendering fails.
+         */
         CustomerSprite(int[] startPos, Image image, Color color) {
             this.characterImage = image;
             this.color = color;
@@ -429,6 +523,11 @@ public class PizzaVisualisation extends Canvas implements IVisualisation {
             this.y = startPos[1];
         }
 
+        /**
+         * Adds a destination waypoint coordinate pair to the sprite path queue.
+         *
+         * @param point Target $[x, y]$ coordinate array.
+         */
         void addTarget(int[] point) {
             targetPoints.add(point);
         }

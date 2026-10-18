@@ -7,8 +7,26 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Data Access Object (DAO) responsible for performing CRUD operations on the
+ * {@code simulation_runs} database table in MariaDB.
+ * <p>
+ * Handles the persistence and retrieval of overall simulation run performance summary metrics,
+ * including total customer counts, service durations, customer breakdown by type, and station utilization rates.
+ * </p>
+ *
+ * @author Daniel
+ * @version 2.0
+ */
 public class SimulationRunDAO {
 
+    /**
+     * Inserts a completed simulation run record into the database and binds the auto-generated primary key ID back to the object.
+     *
+     * @param run The {@link SimulationRun} entity containing summary statistics for a completed run.
+     * @return The auto-generated {@code run_id} primary key if successful; {@code -1} if an error occurs.
+     */
     public int createRun(SimulationRun run) {
 
         String sql = """
@@ -50,6 +68,12 @@ public class SimulationRunDAO {
         return -1;
     }
 
+
+    /**
+     * Updates all summary metrics of an existing simulation run record in the database.
+     *
+     * @param run The {@link SimulationRun} instance containing updated values and a valid {@code runId}.
+     */
     public void updateRun(SimulationRun run) {
 
         String sql = """
@@ -85,6 +109,13 @@ public class SimulationRunDAO {
         }
     }
 
+
+    /**
+     * Retrieves a single simulation run record by its primary key ID.
+     *
+     * @param runId The unique primary key identifier of the simulation run.
+     * @return The matching {@link SimulationRun} object if found; {@code null} otherwise.
+     */
     public SimulationRun getRunById(int runId) {
 
         String sql = """
@@ -112,6 +143,12 @@ public class SimulationRunDAO {
         return null;
     }
 
+
+    /**
+     * Retrieves all recorded simulation runs from the database, ordered in descending order by run ID (newest first).
+     *
+     * @return A {@link List} of all {@link SimulationRun} instances stored in MariaDB; empty list if none found.
+     */
     public List<SimulationRun> getAllRuns() {
 
         List<SimulationRun> runs = new ArrayList<>();
@@ -137,6 +174,12 @@ public class SimulationRunDAO {
         return runs;
     }
 
+
+    /**
+     * Permanently deletes a simulation run record from the database by its primary key ID.
+     *
+     * @param runId The unique primary key identifier of the simulation run to delete.
+     */
     public void deleteRun(int runId) {
 
         String sql = """
@@ -155,6 +198,14 @@ public class SimulationRunDAO {
         }
     }
 
+
+    /**
+     * Maps the current row of an active SQL {@link ResultSet} to a new {@link SimulationRun} domain entity.
+     *
+     * @param result The active {@link ResultSet} positioned at the target row.
+     * @return A fully populated {@link SimulationRun} instance.
+     * @throws SQLException If an error occurs while reading database column values.
+     */
     private SimulationRun mapResultSetToSimulationRun(ResultSet result)
             throws SQLException {
 

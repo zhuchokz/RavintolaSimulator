@@ -2,15 +2,16 @@ package org.example;
 
 import org.example.view.SimulatorGUI;
 
-/* to install JavaFX (adapted from https://openjfx.io/openjfx-docs/):
- *	- Open Module Settings
- * 		- Libraries, add
- *			- from Maven openjfx.javafx.fxml:19.0.2 (this includes all necessary other JavaFX libraries)
- *	- Run Configuration Edit
- *		- Modify Options/Add VM options
- *			- --module-path "lib" --add-modules javafx.controls,javafx.fxml
+/**
+ * Application entry point for launching the discrete-event pizzeria simulation.
+ * <p>
+ * Serves as the primary execution wrapper that initializes JavaFX platform settings
+ * and delegates execution startup to {@link SimulatorGUI}.
+ * </p>
+ *
+ * @author Illia, Anja, Daniel, Niklas
+ * @version 4.0
  */
-
 public class Main { // Simulator using Java FX
 	public static void main(String args[]) {
 		SimulatorGUI.main(args);

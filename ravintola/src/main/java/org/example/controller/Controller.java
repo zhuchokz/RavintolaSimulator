@@ -21,16 +21,42 @@ import org.example.model.PresetConfig;
 
 import java.util.List;
 
+
+/**
+ * Controller class serving as the mediator between the JavaFX User Interface and the
+ * underlying discrete-event simulation engine in accordance with the Model-View-Controller (MVC) pattern.
+ * <p>
+ * Handles user interactions, updates simulation parameters, controls thread lifecycle,
+ * synchronizes visualization updates with the JavaFX Application Thread, and manages database
+ * persistence via DAO implementations.
+ * </p>
+ *
+ * @author Illia
+ * @version 3.0
+ */
 public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 	private IEngine engine;
 	private ISimulatorUI ui;
 	private PresetConfigDAO presetDAO = new PresetConfigDAO();
-	
+
+	/**
+	 * Constructs a Controller instance bound to the specified simulator user interface.
+	 *
+	 * @param ui The {@link ISimulatorUI} instance providing input values and visual components.
+	 */
 	public Controller(ISimulatorUI ui) {
 		this.ui = ui;
 	}
 
-	/* Engine control: */
+
+	/**
+	 * Initializes and starts a new simulation run in a dedicated background thread.
+	 * <p>
+	 * Resets customer metrics, reads configuration values from the UI (arrival paces, service times,
+	 * capacities, and customer distribution weights), configures the simulation engine and visualization
+	 * canvas, and launches the engine execution thread.
+	 * </p>
+	 */
 	@Override
 	public void startSimulation() {
 		Customer.reset();
@@ -80,6 +106,9 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 	}
 
 
+	/**
+	 * Toggles the paused state of the simulation engine and synchronizes the UI visualization canvas state.
+	 */
 	public void togglePause() {
 		if (engine instanceof MyEngine) {
 			MyEngine myEngine = (MyEngine) engine;
@@ -92,14 +121,29 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		}
 	}
 
-	/* Simulation results passing to the UI
-	 * Because FX-UI updates come from engine thread, they need to be directed to the JavaFX thread
+
+	/**
+	 * Updates the simulation end time display on the JavaFX Application Thread.
+	 *
+	 * @param time The total simulated time duration completed.
 	 */
 	@Override
 	public void showEndTime(double time) {
 		Platform.runLater(()->ui.setEndingTime(time));
 	}
 
+
+	/**
+	 * Relays customer movement and state transitions to the visualization canvas and UI event logs.
+	 * <p>
+	 * Ensures all visual manipulations and log appends are safely executed on the JavaFX Application Thread
+	 * via {@link Platform#runLater(Runnable)}.
+	 * </p>
+	 *
+	 * @param id     The unique identifier of the customer.
+	 * @param type   The {@link CustomerType} representing the customer category (e.g., DINEIN, TAKEAWAY, ONLINE).
+	 * @param action The state transition action string (e.g., "ARRIVED", "FINISHED").
+	 */
 	@Override
 	public void visualiseCustomer(int id, CustomerType type, String action) {
 		Platform.runLater(() -> {
@@ -119,6 +163,10 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		});
 	}
 
+
+	/**
+	 * Decreases the simulation execution speed by increasing the step delay and adjusting the UI animation speed scale.
+	 */
 	@Override
 	public void decreaseSpeed() {
 		engine.setDelay((long)(engine.getDelay() * 1.10));
@@ -128,6 +176,11 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		}
 	}
 
+
+	/**
+	 * Increases the simulation execution speed by reducing the step delay (clamped to a minimum of 10ms)
+	 * and adjusting the UI animation speed scale.
+	 */
 	@Override
 	public void increaseSpeed() {
 		long newDelay = (long)(engine.getDelay() * 0.90);
@@ -139,6 +192,10 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		}
 	}
 
+
+	/**
+	 * Halts the active simulation thread and resets the UI visualization canvas to its initial state.
+	 */
 	@Override
 	public void stopSimulation() {
 		if (engine instanceof MyEngine) {
@@ -149,12 +206,24 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		}
 	}
 
+
+	/**
+	 * Fetches all previously recorded simulation runs from the MariaDB database.
+	 *
+	 * @return A {@link List} of {@link SimulationRun} objects representing historical execution data.
+	 */
 	@Override
 	public List<SimulationRun> getAllSimulationRuns() {
 		SimulationRunDAO runDAO = new SimulationRunDAO();
 		return runDAO.getAllRuns();
 	}
 
+
+	/**
+	 * Forwards formatted simulation summary results to the UI text display.
+	 *
+	 * @param s The formatted string containing completed run statistics.
+	 */
 	@Override
 	public void showResults(String s) {
 		Platform.runLater(() -> {
@@ -164,7 +233,16 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		});
 	}
 
-	// Run in a background thread so database latency doesn't hang the application
+
+	/**
+	 * Asynchronously calculates summary metrics and persists the completed simulation run data
+	 * along with detailed individual customer logs into the database.
+	 * <p>
+	 * Runs in a separate thread to prevent database network latency from freezing the UI.
+	 * </p>
+	 *
+	 * @param engine The {@link MyEngine} instance containing finished customer records and station performance statistics.
+	 */
 	public void saveSimulationResultsToDatabase(MyEngine engine) {
 		new Thread(() -> {
 			System.out.println("Initiating database save...");
@@ -220,12 +298,23 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		}).start();
 	}
 
-	// Retrieves all saved preset configurations from the database.
+
+	/**
+	 * Retrieves all saved parameter configuration presets from the database.
+	 *
+	 * @return A {@link List} of {@link PresetConfig} entities stored in MariaDB.
+	 */
 	public List<PresetConfig> getAllPresets() {
 		return presetDAO.getAllPresets();
 	}
 
-	//Saves the current UI configuration as a new Preset in MariaDB.
+
+	/**
+	 * Persists the current configuration parameters set in the UI as a named preset in the database.
+	 *
+	 * @param presetName The unique name label assigned to the saved configuration preset.
+	 * @return {@code true} if the preset was successfully saved; {@code false} if the name was empty or saving failed.
+	 */
 	public boolean saveCurrentPreset(String presetName) {
 		if (presetName == null || presetName.trim().isEmpty()) {
 			return false;
@@ -251,7 +340,12 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		return generatedId != -1;
 	}
 
-	// Applies a selected PresetConfig's parameters back onto the UI inputs.
+
+	/**
+	 * Applies a selected preset configuration's values to the UI input controls on the JavaFX Application Thread.
+	 *
+	 * @param config The {@link PresetConfig} instance containing target parameter values.
+	 */
 	public void applyPresetToUI(PresetConfig config) {
 		if (config == null) return;
 
@@ -269,18 +363,36 @@ public class Controller implements IControllerVtoM, IControllerMtoV {   // NEW
 		});
 	}
 
-	// Deletes a preset configuration by ID.
+
+	/**
+	 * Deletes a specified preset configuration record from the database by its primary key ID.
+	 *
+	 * @param configId The unique identifier of the preset record to delete.
+	 */
 	public void deletePreset(int configId) {
 		presetDAO.deletePreset(configId);
 	}
 
-	// Helper converters for arrival pace mapping
+
+	/**
+	 * Converts a human-readable arrival pace dropdown choice string into its corresponding numeric mean value.
+	 *
+	 * @param pace The UI choice string (e.g., "Fast (2.5s)", "Slow (10s)").
+	 * @return The double value representing arrival mean time.
+	 */
 	private double parseArrivalPaceToMean(String pace) {
 		if ("Fast (2.5s)".equals(pace)) return 2.5;
 		if ("Slow (10s)".equals(pace)) return 10.0;
 		return 5.0; // Default / Normal
 	}
 
+
+	/**
+	 * Converts a numeric arrival mean time into its corresponding UI choice string representation.
+	 *
+	 * @param mean The numeric arrival mean value in seconds.
+	 * @return The formatted string representation for the UI dropdown menu.
+	 */
 	private String convertMeanToArrivalPace(double mean) {
 		if (mean <= 3.0) return "Fast (2.5s)";
 		if (mean >= 8.0) return "Slow (10s)";

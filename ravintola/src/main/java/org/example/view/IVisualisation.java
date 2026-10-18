@@ -2,6 +2,16 @@ package org.example.view;
 
 import org.example.simu.model.CustomerType;
 
+/**
+ * Interface defining the visual rendering component contract for the JavaFX pizzeria simulation UI.
+ * <p>
+ * Provides abstract methods for rendering active customer movements across workstations, clearing display states,
+ * adjusting animation playback speeds, setting workstation capacity limits, and controlling dynamic animation playback.
+ * </p>
+ *
+ * @author Anja
+ * @version 3.0
+ */
 public interface IVisualisation {
 	public void clearDisplay();
 	public void resetVisuals();
